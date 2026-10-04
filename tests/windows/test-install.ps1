@@ -109,7 +109,7 @@ exit /b 9
         "Starting: uv python install 3.14.4",
         "Starting: uv tool install --managed-python --python 3.14.4 --force --reinstall",
         "Exit code: 0 (uv)",
-        "Creating desktop shortcut",
+        "Creating shortcut",
         "Installer completed successfully."
     )) {
         if ($installLog -notmatch [regex]::Escape($expectedLogEntry)) {
