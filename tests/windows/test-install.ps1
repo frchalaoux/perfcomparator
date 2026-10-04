@@ -8,6 +8,7 @@ if ($PSVersionTable.PSVersion.Major -lt 5 -or
 $originalPath = $env:PATH
 $originalTemp = $env:TEMP
 $originalTmp = $env:TMP
+$originalInstallLogDirectory = $env:PERFCOMPARATOR_INSTALL_LOG_DIR
 $testRoot = Join-Path ([IO.Path]::GetTempPath()) "perfcomparator-installer-test-$([guid]::NewGuid())"
 $fakeBin = Join-Path $testRoot "bin"
 $fakeToolDirectory = Join-Path $testRoot "tools"
@@ -19,6 +20,7 @@ $shortcutExisted = Test-Path -LiteralPath $shortcutPath
 
 try {
     New-Item -ItemType Directory -Path $fakeBin, $fakeToolDirectory, $fakeToolBin, $recoveryTemp -Force | Out-Null
+    $env:PERFCOMPARATOR_INSTALL_LOG_DIR = Join-Path $testRoot "logs"
     $env:TEMP = $recoveryTemp
     $env:TMP = $recoveryTemp
 
@@ -97,12 +99,36 @@ exit /b 9
         throw "The installer unexpectedly launched the application or contribution setup."
     }
 
+    $installLogs = @(Get-ChildItem -LiteralPath $env:PERFCOMPARATOR_INSTALL_LOG_DIR -Filter "install-*.log" -File)
+    if ($installLogs.Count -ne 1) {
+        throw "Expected one installer log; found $($installLogs.Count)."
+    }
+    $installLog = Get-Content -LiteralPath $installLogs[0].FullName -Raw
+    foreach ($expectedLogEntry in @(
+        "Installer started.",
+        "Starting: uv python install 3.14.4",
+        "Starting: uv tool install --managed-python --python 3.14.4 --force --reinstall",
+        "Exit code: 0 (uv)",
+        "Creating desktop shortcut",
+        "Installer completed successfully."
+    )) {
+        if ($installLog -notmatch [regex]::Escape($expectedLogEntry)) {
+            throw "Installer log is missing expected entry: $expectedLogEntry"
+        }
+    }
+
     Write-Host "Installer smoke test passed under PowerShell $($PSVersionTable.PSVersion)."
 }
 finally {
     $env:PATH = $originalPath
     $env:TEMP = $originalTemp
     $env:TMP = $originalTmp
+    if ($null -eq $originalInstallLogDirectory) {
+        Remove-Item Env:PERFCOMPARATOR_INSTALL_LOG_DIR -ErrorAction SilentlyContinue
+    }
+    else {
+        $env:PERFCOMPARATOR_INSTALL_LOG_DIR = $originalInstallLogDirectory
+    }
     Remove-Item Env:FAKE_UV_TOOL_DIR -ErrorAction SilentlyContinue
     Remove-Item Env:FAKE_UV_BIN -ErrorAction SilentlyContinue
     Remove-Item Env:FAKE_UV_LOG -ErrorAction SilentlyContinue
