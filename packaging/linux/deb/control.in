@@ -1,0 +1,10 @@
+Package: perfcomparator-installer
+Version: @VERSION@
+Section: utils
+Priority: optional
+Architecture: amd64
+Depends: bash, ca-certificates, curl | wget
+Maintainer: PerfComparator <noreply@github.com>
+Description: User-level installer for PerfComparator
+ Installs uv, managed CPython with Tk, and PerfComparator for the current user.
+ The application itself and its Python environment are not installed as root.

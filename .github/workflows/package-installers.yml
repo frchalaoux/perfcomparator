@@ -70,6 +70,12 @@ jobs:
         with:
           name: installer-linux
           path: PerfComparator-Linux-x86_64.tar.gz
+      - name: Build Ubuntu/Debian package
+        run: bash packaging/linux/build-deb.sh "$RELEASE_TAG" dist
+      - uses: actions/upload-artifact@v4
+        with:
+          name: installer-linux-deb
+          path: dist/PerfComparator-Ubuntu-Debian-amd64.deb
 
   publish:
     needs: [macos, windows, linux]
@@ -91,4 +97,5 @@ jobs:
             dist/PerfComparator-macOS.zip \
             dist/PerfComparator-Windows-x64.zip \
             dist/PerfComparator-Linux-x86_64.tar.gz \
+            dist/PerfComparator-Ubuntu-Debian-amd64.deb \
             --repo frchalaoux/perfcomparator
