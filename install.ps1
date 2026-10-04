@@ -47,6 +47,30 @@ function Install-CurrentUv {
     }
 }
 
+function Get-UvToolList {
+    param([switch]$AllowNonZeroExitCode)
+
+    $previousErrorActionPreference = $ErrorActionPreference
+    try {
+        # Windows PowerShell 5.1 turns native stderr into a terminating error
+        # when ErrorActionPreference is Stop. uv uses stderr for its benign
+        # "No tools installed" message, so capture it explicitly and inspect
+        # the native exit code ourselves.
+        $ErrorActionPreference = "Continue"
+        $output = @(& $uvCommand tool list 2>&1 | ForEach-Object { "$($_)" })
+        $exitCode = $LASTEXITCODE
+    }
+    finally {
+        $ErrorActionPreference = $previousErrorActionPreference
+    }
+
+    if ($exitCode -ne 0 -and -not $AllowNonZeroExitCode) {
+        throw "uv n'a pas pu inventorier les outils installés (code $exitCode)."
+    }
+
+    @($output | Where-Object { $_ -notmatch "No tools installed" })
+}
+
 if (Get-Command uv -ErrorAction SilentlyContinue) {
     $uvCommand = "uv"
 }
@@ -84,14 +108,7 @@ if ($LASTEXITCODE -ne 0) {
 
 # uv ne peut pas désinstaller un outil dont le reçu TOML est corrompu. Capture
 # son avertissement puis met de côté uniquement les environnements concernés.
-$previousErrorActionPreference = $ErrorActionPreference
-try {
-    $ErrorActionPreference = "Continue"
-    $toolListOutput = @(& $uvCommand tool list 2>&1 | ForEach-Object { "$($_)" })
-}
-finally {
-    $ErrorActionPreference = $previousErrorActionPreference
-}
+$toolListOutput = @(Get-UvToolList -AllowNonZeroExitCode)
 
 $malformedTools = foreach ($line in $toolListOutput) {
     if ($line -match "Ignoring malformed tool [``'‘](.+?)[``'’]") {
@@ -111,10 +128,7 @@ foreach ($toolName in $malformedTools) {
     }
 }
 
-$toolList = @(& $uvCommand tool list 2>&1 | ForEach-Object { "$($_)" })
-if ($LASTEXITCODE -ne 0) {
-    throw "uv n'a pas pu inventorier les outils installés."
-}
+$toolList = @(Get-UvToolList)
 $legacyToolInstalled = $toolList -match "^benchmark-mac v"
 
 if ($legacyToolInstalled) {

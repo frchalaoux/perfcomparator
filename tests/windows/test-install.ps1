@@ -48,6 +48,8 @@ if "%~1"=="tool" if "%~2"=="list" (
   if not exist "%FAKE_UV_LIST_MARKER%" (
     echo seen>"%FAKE_UV_LIST_MARKER%"
     echo warning: Ignoring malformed tool `perfcomparator-broken-ci` 1>&2
+  ) else (
+    echo No tools installed 1>&2
   )
   exit /b 0
 )
@@ -84,6 +86,10 @@ exit /b 9
         throw "The desktop shortcut was not created."
     }
     $uvCalls = Get-Content -LiteralPath $env:FAKE_UV_LOG -Raw
+    $toolListCallCount = @($uvCalls -split "`r?`n" | Where-Object { $_ -eq "tool list" }).Count
+    if ($toolListCallCount -ne 2) {
+        throw "Expected two uv tool-list calls, including the empty-list case; found $toolListCallCount."
+    }
     if ($uvCalls -notmatch "tool install --managed-python --python 3\.14\.4 --force --reinstall") {
         throw "The installer did not request the expected uv tool installation."
     }
