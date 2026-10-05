@@ -4,6 +4,7 @@ __pycache__/
 .ruff_cache/
 .venv/
 .vscode/
+tools/markdown-pdf/node_modules/
 dist/
 *.tmp
 data/results/*.json
