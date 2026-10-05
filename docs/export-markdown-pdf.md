@@ -1,11 +1,9 @@
 # Exporter un document Markdown en PDF
 
 Le réglage d'orientation de l'extension VS Code **Markdown PDF** s'applique au
-document entier. Pour garder le texte en portrait tout en donnant à chaque
-diagramme Mermaid sa propre page A4 orientée selon ses proportions, utiliser
-l'exporteur du dépôt. Il découpe le document aux blocs Mermaid, rend chaque
-segment de texte et chaque diagramme séparément, puis assemble les pages dans
-l'ordre original en un PDF unique.
+document entier. Cet exporteur fournit une mise en page mixte sélectionnable
+par option CLI : le texte et les diagrammes portrait sont composés dans le même
+flux de pagination ; les diagrammes paysage ont leurs propres pages A4.
 
 ## Prérequis
 
@@ -25,6 +23,12 @@ Puis exporter le fichier voulu :
 npm --prefix tools/markdown-pdf run export -- docs/strategie-publication.md
 ```
 
+La mise en page peut être choisie explicitement :
+
+```bash
+npm --prefix tools/markdown-pdf run export -- docs/strategie-publication.md --layout inline
+```
+
 Par défaut, le PDF est créé à côté du Markdown avec le même nom et l'extension
 `.pdf`. Pour choisir un autre chemin :
 
@@ -32,11 +36,11 @@ Par défaut, le PDF est créé à côté du Markdown avec le même nom et l'exte
 npm --prefix tools/markdown-pdf run export -- docs/strategie-publication.md --output /chemin/vers/strategie.pdf
 ```
 
-Les blocs de texte occupent des pages A4 portrait, une page ou plus selon leur
-contenu. Chaque bloc Mermaid est une page A4 autonome : portrait si le diagramme
-est plus haut que large, paysage s'il est plus large que haut. Les
-autres blocs de code restent du texte ordinaire. Les images et liens relatifs
-sont résolus à partir du dossier du fichier Markdown.
+Avec `--layout inline`, les blocs de texte occupent des pages A4 portrait. Un
+diagramme portrait reste entier et partage la page courante s'il y tient ; sinon
+il passe à la suivante. Un diagramme plus large que haut est placé seul sur une
+page A4 paysage. Les autres blocs de code restent du texte ordinaire. Les
+images et liens relatifs sont résolus à partir du dossier du fichier Markdown.
 
 Le script ne modifie pas le Markdown. Il ne traite pas les directives propres à
 des extensions Markdown non standard ; utiliser la syntaxe Markdown prise en

@@ -18,19 +18,23 @@ const mmdc = path.join(
 const markdown = new MarkdownIt({ html: true, linkify: true, typographer: true });
 
 function usage() {
-  console.error('Usage: npm run export -- <input.md> [-o|--output <output.pdf>]');
+  console.error('Usage: npm run export -- <input.md> [--layout inline] [-o|--output <output.pdf>]');
   process.exit(2);
 }
 
 function parseArgs(args) {
   let input;
   let output;
+  let layout = 'inline';
   let outputExplicit = false;
   for (let i = 0; i < args.length; i += 1) {
     if (args[i] === '-o' || args[i] === '--output') {
       output = args[++i];
       outputExplicit = true;
       if (!output) usage();
+    } else if (args[i] === '--layout') {
+      layout = args[++i];
+      if (layout !== 'inline') usage();
     } else if (args[i].startsWith('-')) {
       usage();
     } else if (input) {
@@ -44,6 +48,7 @@ function parseArgs(args) {
   return {
     input: path.resolve(invocationDir, input),
     output: path.resolve(invocationDir, output ?? input.replace(/\.md$/i, '') + '.pdf'),
+    layout,
     outputExplicit,
   };
 }
@@ -103,20 +108,48 @@ function htmlDocument(body, baseUrl) {
       th, td { border: 1px solid #999; padding: 5px 7px; vertical-align: top; }
       th { background: #eee; }
       img { max-width: 100%; }
+      figure.mermaid-portrait {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        max-height: 225mm;
+        margin: 1em 0;
+        break-inside: avoid;
+        page-break-inside: avoid;
+      }
+      figure.mermaid-portrait svg {
+        display: block;
+        width: auto;
+        height: auto;
+        max-width: 100%;
+        max-height: 225mm;
+      }
       a { color: #0645ad; }
     </style></head><body>${body}</body></html>`;
 }
 
-async function renderText(browser, section, baseUrl) {
+async function renderFlow(browser, body, baseUrl) {
   const page = await browser.newPage();
   try {
-    await page.setContent(htmlDocument(markdown.render(section.markdown), baseUrl), {
+    await page.setContent(htmlDocument(body, baseUrl), {
       waitUntil: 'networkidle0',
     });
     return await page.pdf({ format: 'A4', printBackground: true, preferCSSPageSize: true });
   } finally {
     await page.close();
   }
+}
+
+function popTrailingHeading(blocks) {
+  for (let index = blocks.length - 1; index >= 0; index -= 1) {
+    const html = blocks[index].trimEnd();
+    const match = html.match(/(?:^|\n)(<h([1-6])\b[^>]*>[\s\S]*?<\/h\2>)\s*$/i);
+    if (!match) continue;
+    blocks[index] = html.slice(0, match.index).trimEnd();
+    if (!blocks[index]) blocks.splice(index, 1);
+    return match[1];
+  }
+  return '';
 }
 
 function renderMermaidSvg(inputPath, outputPath) {
@@ -142,16 +175,33 @@ function svgRatio(svg) {
   throw new Error('Impossible de déterminer le ratio du diagramme Mermaid rendu.');
 }
 
-async function renderDiagram(browser, svg) {
+async function renderDiagram(browser, svg, heading = '') {
   const landscape = svgRatio(svg) > 1;
   const page = await browser.newPage();
   try {
     await page.setContent(`<!doctype html><html><head><meta charset="utf-8"><style>
       @page { size: A4 ${landscape ? 'landscape' : 'portrait'}; margin: 10mm; }
       html, body { width: 100%; height: 100%; margin: 0; }
-      body { display: flex; align-items: center; justify-content: center; }
-      svg { display: block; max-width: 100%; max-height: 100%; width: auto; height: auto; }
-    </style></head><body>${svg}</body></html>`, { waitUntil: 'load' });
+      body {
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-sizing: border-box;
+        padding-top: ${heading ? '20mm' : '0'};
+      }
+      header { position: absolute; top: 0; left: 0; right: 0; font: bold 15pt Arial, sans-serif; }
+      header h1, header h2, header h3, header h4 { margin: 0; }
+      svg {
+        display: block;
+        max-width: 100%;
+        max-height: ${heading ? 'calc(100% - 20mm)' : '100%'};
+        width: auto;
+        height: auto;
+      }
+    </style></head><body>${heading ? `<header>${heading}</header>` : ''}${svg}</body></html>`, {
+      waitUntil: 'load',
+    });
     return await page.pdf({
       format: 'A4',
       landscape,
@@ -164,7 +214,7 @@ async function renderDiagram(browser, svg) {
 }
 
 async function main() {
-  const { input, output, outputExplicit } = parseArgs(process.argv.slice(2));
+  const { input, output, layout, outputExplicit } = parseArgs(process.argv.slice(2));
   if (!outputExplicit) {
     try {
       await access(output);
@@ -175,17 +225,25 @@ async function main() {
   }
   const source = await readFile(input, 'utf8');
   const sections = splitDocument(source);
+  console.log(`Mise en page : ${layout}`);
   const workDir = await mkdtemp(path.join(os.tmpdir(), 'perfcomparator-markdown-pdf-'));
   let browser;
   const fragments = [];
+  const flowBlocks = [];
   let diagramNumber = 0;
 
   try {
     browser = await puppeteer.launch({ headless: true });
     const baseUrl = pathToFileURL(`${path.dirname(input)}${path.sep}`).href;
+    const flushFlow = async () => {
+      if (!flowBlocks.length) return;
+      fragments.push(await renderFlow(browser, flowBlocks.join('\n'), baseUrl));
+      flowBlocks.length = 0;
+    };
+
     for (const section of sections) {
       if (section.type === 'text') {
-        fragments.push(await renderText(browser, section, baseUrl));
+        flowBlocks.push(markdown.render(section.markdown));
       } else {
         diagramNumber += 1;
         const mermaidInput = path.join(workDir, `diagram-${diagramNumber}.mmd`);
@@ -193,10 +251,18 @@ async function main() {
         await writeFile(mermaidInput, section.source, 'utf8');
         renderMermaidSvg(mermaidInput, svgPath);
         const svg = await readFile(svgPath, 'utf8');
-        fragments.push(await renderDiagram(browser, svg));
-        console.log(`Diagramme ${diagramNumber} : page A4 ${svgRatio(svg) > 1 ? 'paysage' : 'portrait'}`);
+        if (svgRatio(svg) > 1) {
+          const heading = popTrailingHeading(flowBlocks);
+          await flushFlow();
+          fragments.push(await renderDiagram(browser, svg, heading));
+          console.log(`Diagramme ${diagramNumber} : page A4 paysage dédiée`);
+        } else {
+          flowBlocks.push(`<figure class="mermaid-portrait">${svg}</figure>`);
+          console.log(`Diagramme ${diagramNumber} : portrait, inséré dans le flux du texte`);
+        }
       }
     }
+    await flushFlow();
 
     const result = await PDFDocument.create();
     for (const fragment of fragments) {
