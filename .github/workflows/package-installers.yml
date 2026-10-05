@@ -19,7 +19,7 @@ jobs:
       - name: Build installer archive
         run: |
           mkdir -p package/PerfComparator
-          cp install.command install.sh package/PerfComparator/
+          cp install.command install.sh uninstall.sh package/PerfComparator/
           printf '%s\n' "$RELEASE_TAG" > package/PerfComparator/release-version.txt
           ditto -c -k --sequesterRsrc --keepParent package/PerfComparator PerfComparator-macOS.zip
       - uses: actions/upload-artifact@v4
@@ -39,7 +39,7 @@ jobs:
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Path package/PerfComparator -Force | Out-Null
-          Copy-Item install.bat, install.ps1 package/PerfComparator/
+          Copy-Item install.bat, install.ps1, uninstall.ps1 package/PerfComparator/
           [System.IO.File]::WriteAllText(
             (Join-Path (Get-Location) 'package/PerfComparator/release-version.txt'),
             $env:RELEASE_TAG,
@@ -62,9 +62,13 @@ jobs:
       - name: Build installer archive
         run: |
           mkdir -p package/PerfComparator
-          cp install.desktop install-linux.sh install.sh package/PerfComparator/
+          cp install.desktop install-linux.sh install.sh uninstall.sh package/PerfComparator/
           printf '%s\n' "$RELEASE_TAG" > package/PerfComparator/release-version.txt
-          chmod 755 package/PerfComparator/install-linux.sh package/PerfComparator/install.sh package/PerfComparator/install.desktop
+          chmod 755 \
+            package/PerfComparator/install-linux.sh \
+            package/PerfComparator/install.sh \
+            package/PerfComparator/uninstall.sh \
+            package/PerfComparator/install.desktop
           tar -czf PerfComparator-Linux-x86_64.tar.gz -C package PerfComparator
       - uses: actions/upload-artifact@v4
         with:

@@ -22,12 +22,16 @@ esac
 [ "$(dpkg-deb --field "$deb_file" Version)" = "$expected_version" ]
 [ "$(dpkg-deb --field "$deb_file" Architecture)" = amd64 ]
 [ -x "$package_root/usr/bin/perfcomparator-install" ]
+[ -x "$package_root/usr/bin/perfcomparator-uninstall" ]
 [ -x "$package_root/usr/lib/perfcomparator-installer/install-linux.sh" ]
 [ -x "$package_root/usr/lib/perfcomparator-installer/install.sh" ]
+[ -x "$package_root/usr/lib/perfcomparator-installer/uninstall.sh" ]
 [ -f "$package_root/usr/share/applications/perfcomparator-installer.desktop" ]
 [ "$(cat "$package_root/usr/lib/perfcomparator-installer/release-version.txt")" = "$release_tag" ]
 
 sh -n "$package_root/usr/bin/perfcomparator-install"
+sh -n "$package_root/usr/bin/perfcomparator-uninstall"
 sh -n "$package_root/usr/lib/perfcomparator-installer/install-linux.sh"
 sh -n "$package_root/usr/lib/perfcomparator-installer/install.sh"
+sh -n "$package_root/usr/lib/perfcomparator-installer/uninstall.sh"
 echo "Debian package smoke test passed for $release_tag"

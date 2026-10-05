@@ -230,47 +230,63 @@ Write-InstallLog "INFO" ("Installed executable verified: {0}" -f $perfComparator
 Write-Host "Commande PerfComparator installée : $perfComparatorCommand"
 
 Write-Host ""
-$desktopPath = [Environment]::GetFolderPath("Desktop")
-$shortcutDirectory = $desktopPath
-if ($desktopPath -match '^\\\\') {
-    # Parallels may redirect the Windows Desktop to a macOS shared folder
-    # (for example, \\Mac\Home\Desktop). Saving a .lnk there can destabilize
-    # the VM, so put the shortcut in the user's local Windows Start Menu.
-    $programsPath = [Environment]::GetFolderPath("Programs")
-    if ([string]::IsNullOrWhiteSpace($programsPath) -or $programsPath -match '^\\\\') {
-        throw "Le Bureau Windows est un chemin réseau et le menu Démarrer local est introuvable ; raccourci non créé."
+$shortcutCreated = $false
+try {
+    $desktopPath = [Environment]::GetFolderPath("Desktop")
+    $shortcutDirectory = $desktopPath
+    if ([string]::IsNullOrWhiteSpace($desktopPath)) {
+        throw "Le dossier Bureau n'est pas disponible dans cette session."
     }
-    $shortcutDirectory = $programsPath
-    if (-not (Test-Path -LiteralPath $shortcutDirectory -PathType Container)) {
-        New-Item -ItemType Directory -Path $shortcutDirectory -Force | Out-Null
+    if ($desktopPath -match '^\\\\') {
+        # Parallels may redirect the Windows Desktop to a macOS shared folder
+        # (for example, \\Mac\Home\Desktop). Saving a .lnk there can destabilize
+        # the VM, so put the shortcut in the user's local Windows Start Menu.
+        $programsPath = [Environment]::GetFolderPath("Programs")
+        if ([string]::IsNullOrWhiteSpace($programsPath) -or $programsPath -match '^\\\\') {
+            throw "Le Bureau Windows est un chemin réseau et le menu Démarrer local est introuvable."
+        }
+        $shortcutDirectory = $programsPath
+        if (-not (Test-Path -LiteralPath $shortcutDirectory -PathType Container)) {
+            New-Item -ItemType Directory -Path $shortcutDirectory -Force | Out-Null
+        }
+        Write-Warning "Bureau Windows partagé détecté ; le raccourci sera placé dans le menu Démarrer local."
+        Write-InstallLog "INFO" ("Desktop is a UNC path ({0}); using local Start Menu: {1}" -f $desktopPath, $programsPath)
     }
-    Write-Warning "Bureau Windows partagé détecté ; le raccourci sera placé dans le menu Démarrer local."
-    Write-InstallLog "INFO" ("Desktop is a UNC path ({0}); using local Start Menu: {1}" -f $desktopPath, $programsPath)
-}
-$shortcutPath = Join-Path $shortcutDirectory "PerfComparator.lnk"
-$pythonwPath = Join-Path $toolDirectory "perfcomparator\Scripts\pythonw.exe"
-$shortcutTarget = $perfComparatorCommand
-$shortcutArguments = "desktop"
-if (Test-Path $pythonwPath) {
-    $shortcutTarget = $pythonwPath
-    $shortcutArguments = "-m benchmark_mac.desktop_entry"
-}
+    $shortcutPath = Join-Path $shortcutDirectory "PerfComparator.lnk"
+    $pythonwPath = Join-Path $toolDirectory "perfcomparator\Scripts\pythonw.exe"
+    $shortcutTarget = $perfComparatorCommand
+    $shortcutArguments = "desktop"
+    if (Test-Path $pythonwPath) {
+        $shortcutTarget = $pythonwPath
+        $shortcutArguments = "-m benchmark_mac.desktop_entry"
+    }
 
-Write-InstallLog "STEP" ("Creating shortcut at {0}; target={1}; arguments={2}" -f $shortcutPath, $shortcutTarget, $shortcutArguments)
-$shell = New-Object -ComObject WScript.Shell
-Write-InstallLog "INFO" "Windows Script Host shortcut object created."
-$shortcut = $shell.CreateShortcut($shortcutPath)
-$shortcut.TargetPath = $shortcutTarget
-$shortcut.Arguments = $shortcutArguments
-$shortcut.WorkingDirectory = $HOME
-$shortcut.IconLocation = "$shortcutTarget,0"
-Write-InstallLog "STEP" "Saving desktop shortcut."
-$shortcut.Save()
-Write-InstallLog "INFO" "Desktop shortcut saved successfully."
-Write-Host "Raccourci créé : $shortcutPath"
+    Write-InstallLog "STEP" ("Creating shortcut at {0}; target={1}; arguments={2}" -f $shortcutPath, $shortcutTarget, $shortcutArguments)
+    $shell = New-Object -ComObject WScript.Shell
+    Write-InstallLog "INFO" "Windows Script Host shortcut object created."
+    $shortcut = $shell.CreateShortcut($shortcutPath)
+    $shortcut.TargetPath = $shortcutTarget
+    $shortcut.Arguments = $shortcutArguments
+    $shortcut.WorkingDirectory = $HOME
+    $shortcut.IconLocation = "$shortcutTarget,0"
+    Write-InstallLog "STEP" "Saving desktop shortcut."
+    $shortcut.Save()
+    Write-InstallLog "INFO" "Desktop shortcut saved successfully."
+    Write-Host "Raccourci créé : $shortcutPath"
+    $shortcutCreated = $true
+}
+catch {
+    Write-Warning "L'installation CLI a réussi, mais le raccourci graphique n'a pas pu être créé : $($_.Exception.Message)"
+    Write-InstallLog "WARNING" ("Graphical shortcut not created; CLI remains available. {0}" -f $_.Exception.Message)
+}
 
 Write-Host "PerfComparator $releaseVersion est installé."
-Write-Host "Pour lancer l'interface : utilisez le raccourci créé ou perfcomparator desktop"
+if ($shortcutCreated) {
+    Write-Host "Pour lancer l'interface : utilisez le raccourci créé ou perfcomparator desktop"
+}
+else {
+    Write-Host "La ligne de commande reste disponible : perfcomparator --version"
+}
 Write-Host "Pour configurer une contribution GitHub : perfcomparator setup-contribution"
 Write-InstallLog "INFO" "Installer completed successfully."
 $script:installLogWriter.Dispose()

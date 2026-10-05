@@ -36,7 +36,7 @@ def test_versions_are_consistent_across_package_and_installers() -> None:
     assert "BENCHMARK_MAC_VERSION" in posix_installer
     assert "BENCHMARK_MAC_VERSION" in windows_installer
     assert "tool uninstall benchmark-mac" in posix_installer
-    assert "tool uninstall benchmark-mac" in windows_installer
+    assert 'ArgumentList @("tool", "uninstall", "benchmark-mac")' in windows_installer
     assert "setup-contribution --yes" not in posix_installer
     assert "setup-contribution --yes" not in windows_installer
     assert "perfcomparator setup-contribution" in posix_installer
@@ -53,8 +53,9 @@ def test_versions_are_consistent_across_package_and_installers() -> None:
     )
     assert "Compatible avec Windows PowerShell 5.1 et PowerShell 7." in windows_installer
     assert "Install-CurrentUv" in windows_installer
-    assert "-File $installerPath" in windows_installer
+    assert '"-File", $installerPath' in windows_installer
     assert "irm https://astral.sh/uv/install.ps1 | iex" not in windows_installer
+    assert "Graphical shortcut not created; CLI remains available." in windows_installer
     expected_posix_url = (
         f"https://raw.githubusercontent.com/frchalaoux/perfcomparator/{EXPECTED_TAG}/install.sh"
     )
@@ -67,6 +68,16 @@ def test_versions_are_consistent_across_package_and_installers() -> None:
         assert expected_windows_url in document
     assert "/v0.3.0.dev0/install.sh" in versions
     assert "/v0.3.0.dev0/install.ps1" in versions
+
+
+def test_release_archives_include_platform_uninstallers() -> None:
+    workflow = (ROOT / ".github" / "workflows" / "package-installers.yml").read_text(
+        encoding="utf-8"
+    )
+
+    assert "cp install.command install.sh uninstall.sh" in workflow
+    assert "Copy-Item install.bat, install.ps1, uninstall.ps1" in workflow
+    assert "cp install.desktop install-linux.sh install.sh uninstall.sh" in workflow
 
 
 def test_posix_installer_defaults_to_its_own_tag(tmp_path: Path) -> None:

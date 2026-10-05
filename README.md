@@ -10,6 +10,8 @@ La stable actuelle est [`v0.4.0`](https://github.com/frchalaoux/perfcomparator/r
 Retrouver [tous les tags](https://github.com/frchalaoux/perfcomparator/tags).
 Consulter la [stratégie de publication](docs/strategie-publication.md).
 Télécharger l'application depuis la [page qui détecte votre système](https://frchalaoux.github.io/perfcomparator/).
+Consulter le [guide d'installation pour macOS, Windows et Linux](docs/installation.md).
+Consulter le [guide de désinstallation](docs/desinstallation.md).
 
 ## Préversion publiée `v0.5.0.dev0`
 

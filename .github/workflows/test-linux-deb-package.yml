@@ -9,6 +9,7 @@ on:
       - tests/linux/**
       - install-linux.sh
       - install.sh
+      - uninstall.sh
   push:
     branches:
       - feat/desktop-launcher
@@ -19,6 +20,7 @@ on:
       - tests/linux/**
       - install-linux.sh
       - install.sh
+      - uninstall.sh
 
 permissions:
   contents: read

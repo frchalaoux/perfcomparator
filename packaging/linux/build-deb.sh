@@ -47,14 +47,18 @@ cp "$repo_root/packaging/linux/deb/perfcomparator-installer.desktop" \
     "$package_root/usr/share/applications/perfcomparator-installer.desktop"
 cp "$repo_root/packaging/linux/deb/perfcomparator-install" \
     "$package_root/usr/bin/perfcomparator-install"
-cp "$repo_root/install-linux.sh" "$repo_root/install.sh" \
+cp "$repo_root/packaging/linux/deb/perfcomparator-uninstall" \
+    "$package_root/usr/bin/perfcomparator-uninstall"
+cp "$repo_root/install-linux.sh" "$repo_root/install.sh" "$repo_root/uninstall.sh" \
     "$package_root/usr/lib/perfcomparator-installer/"
 printf '%s\n' "$release_tag" \
     > "$package_root/usr/lib/perfcomparator-installer/release-version.txt"
 chmod 755 \
     "$package_root/usr/bin/perfcomparator-install" \
+    "$package_root/usr/bin/perfcomparator-uninstall" \
     "$package_root/usr/lib/perfcomparator-installer/install-linux.sh" \
-    "$package_root/usr/lib/perfcomparator-installer/install.sh"
+    "$package_root/usr/lib/perfcomparator-installer/install.sh" \
+    "$package_root/usr/lib/perfcomparator-installer/uninstall.sh"
 chmod 644 \
     "$package_root/DEBIAN/control" \
     "$package_root/usr/share/applications/perfcomparator-installer.desktop" \
