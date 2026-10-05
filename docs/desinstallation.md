@@ -5,20 +5,20 @@ créés par son installateur. Ils conservent `uv`, CPython géré par `uv`, les
 rapports de benchmark et les journaux d'installation. Cette conservation évite
 de casser d'autres outils `uv` et protège les données de l'utilisateur.
 
-Utilisez le désinstallateur inclus dans l'archive PerfComparator correspondant
-à votre système. Il demande une confirmation ; l'option `--yes` (ou `-Yes` sous
-PowerShell) permet de confirmer explicitement sans question interactive.
-Les anciennes archives ne sont pas modifiées rétroactivement. Si votre archive
-ne contient pas le script, téléchargez-le depuis le
-[dépôt GitHub](https://github.com/frchalaoux/perfcomparator/tree/main) avant de
-le lancer.
+Téléchargez le désinstallateur adapté depuis la
+[page PerfComparator](https://frchalaoux.github.io/perfcomparator/) ou utilisez
+le script inclus dans l'archive d'installation. Il demande une confirmation ;
+l'option `--yes` (ou `-Yes` sous PowerShell) confirme sans invite interactive.
+Les anciennes archives ne sont pas modifiées rétroactivement ; la page fournit
+le désinstallateur courant même si l'archive téléchargée auparavant ne le
+contenait pas.
 
 ## macOS
 
-Dans Terminal, depuis le dossier extrait de l'archive macOS :
+Dans Terminal, depuis le dossier `Téléchargements` :
 
 ```sh
-bash ./uninstall.sh
+bash ~/Downloads/PerfComparator-uninstall-macOS.sh
 ```
 
 Pour un Mac administré à distance en SSH, c'est la même commande. Elle retire
@@ -27,10 +27,10 @@ cette application et l'outil installé par `uv`.
 
 ## Windows 10, Windows 11 et Windows Server Core
 
-Ouvrez PowerShell dans le dossier extrait de l'archive Windows et lancez :
+Dans PowerShell, lancez le script téléchargé :
 
 ```powershell
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\uninstall.ps1
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$env:USERPROFILE\Downloads\PerfComparator-uninstall-Windows.ps1"
 ```
 
 Cette commande fonctionne avec Windows PowerShell 5.1 ; PowerShell 7 n'est pas
@@ -42,15 +42,15 @@ correspond bien au lanceur de l'application.
 Pour confirmer sans invite :
 
 ```powershell
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\uninstall.ps1 -Yes
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$env:USERPROFILE\Downloads\PerfComparator-uninstall-Windows.ps1" -Yes
 ```
 
 ## Linux
 
-Depuis le dossier extrait de l'archive Linux, dans un terminal :
+Dans un terminal, lancez le script téléchargé :
 
 ```sh
-bash ./uninstall.sh
+bash ~/Downloads/PerfComparator-uninstall-Linux.sh
 ```
 
 La commande fonctionne aussi sur un serveur sans interface graphique. Elle

@@ -20,12 +20,15 @@ jobs:
         run: |
           mkdir -p package/PerfComparator
           cp install.command install.sh uninstall.sh package/PerfComparator/
+          cp uninstall.sh PerfComparator-uninstall-macOS.sh
           printf '%s\n' "$RELEASE_TAG" > package/PerfComparator/release-version.txt
           ditto -c -k --sequesterRsrc --keepParent package/PerfComparator PerfComparator-macOS.zip
       - uses: actions/upload-artifact@v4
         with:
           name: installer-macos
-          path: PerfComparator-macOS.zip
+          path: |
+            PerfComparator-macOS.zip
+            PerfComparator-uninstall-macOS.sh
 
   windows:
     runs-on: windows-latest
@@ -40,6 +43,7 @@ jobs:
         run: |
           New-Item -ItemType Directory -Path package/PerfComparator -Force | Out-Null
           Copy-Item install.bat, install.ps1, uninstall.ps1 package/PerfComparator/
+          Copy-Item uninstall.ps1 PerfComparator-uninstall-Windows.ps1
           [System.IO.File]::WriteAllText(
             (Join-Path (Get-Location) 'package/PerfComparator/release-version.txt'),
             $env:RELEASE_TAG,
@@ -49,7 +53,9 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: installer-windows
-          path: PerfComparator-Windows-x64.zip
+          path: |
+            PerfComparator-Windows-x64.zip
+            PerfComparator-uninstall-Windows.ps1
 
   linux:
     runs-on: ubuntu-24.04
@@ -63,17 +69,21 @@ jobs:
         run: |
           mkdir -p package/PerfComparator
           cp install.desktop install-linux.sh install.sh uninstall.sh package/PerfComparator/
+          cp uninstall.sh PerfComparator-uninstall-Linux.sh
           printf '%s\n' "$RELEASE_TAG" > package/PerfComparator/release-version.txt
           chmod 755 \
             package/PerfComparator/install-linux.sh \
             package/PerfComparator/install.sh \
             package/PerfComparator/uninstall.sh \
-            package/PerfComparator/install.desktop
+            package/PerfComparator/install.desktop \
+            PerfComparator-uninstall-Linux.sh
           tar -czf PerfComparator-Linux-x86_64.tar.gz -C package PerfComparator
       - uses: actions/upload-artifact@v4
         with:
           name: installer-linux
-          path: PerfComparator-Linux-x86_64.tar.gz
+          path: |
+            PerfComparator-Linux-x86_64.tar.gz
+            PerfComparator-uninstall-Linux.sh
       - name: Build Ubuntu/Debian package
         run: bash packaging/linux/build-deb.sh "$RELEASE_TAG" dist
       - uses: actions/upload-artifact@v4
@@ -102,4 +112,7 @@ jobs:
             dist/PerfComparator-Windows-x64.zip \
             dist/PerfComparator-Linux-x86_64.tar.gz \
             dist/PerfComparator-Ubuntu-Debian-amd64.deb \
+            dist/PerfComparator-uninstall-macOS.sh \
+            dist/PerfComparator-uninstall-Windows.ps1 \
+            dist/PerfComparator-uninstall-Linux.sh \
             --repo frchalaoux/perfcomparator
