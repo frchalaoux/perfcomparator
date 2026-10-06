@@ -129,11 +129,26 @@ L'archive macOS fonctionne sur les Mac Intel et Apple silicon.
 2. Ouvrez le dossier `PerfComparator` extrait, puis double-cliquez sur
    `install.command`. Une fenêtre Terminal affiche les étapes ; laissez-la
    ouverte jusqu'au message de fin.
-3. Si macOS indique que le fichier vient d'un développeur non identifié,
-   vérifiez d'abord que l'archive vient bien de la release officielle. Vous
-   pouvez ensuite autoriser **ce fichier seulement** via **Réglages Système →
-   Confidentialité et sécurité → Ouvrir quand même**, puis confirmer l'ouverture.
-   Ne désactivez pas Gatekeeper pour toutes les applications. Voir l'aide
+3. macOS peut afficher « Impossible d’ouvrir “install.command” car cette app
+   provient d’un développeur non identifié ». `install.command` est un script
+   d'installation qui n'est pas signé avec un certificat Apple Developer ID ni
+   notarisé par Apple. Cet avertissement signifie que macOS ne peut pas vérifier
+   son développeur ; ce n'est pas, à lui seul, la preuve que le fichier est
+   malveillant. Vérifiez tout de même que l'archive provient bien de la page
+   officielle de PerfComparator avant de continuer.
+
+   Pour autoriser uniquement cet installateur, faites un clic droit (ou
+   Ctrl-clic) sur `install.command` dans le Finder et choisissez **Ouvrir**,
+   puis confirmez **Ouvrir** si macOS le propose. Si cette option n'est pas
+   proposée, essayez de lancer le fichier une fois, puis ouvrez **Réglages
+   Système → Confidentialité et sécurité**, descendez jusqu'à la section
+   **Sécurité** et cliquez sur **Ouvrir quand même** pour `install.command`.
+   Confirmez une dernière fois dans l'alerte qui réapparaît.
+
+   Ne choisissez pas une option qui désactive Gatekeeper pour toutes les
+   applications. Pour supprimer cet avertissement à l'avenir, l'installateur
+   devra être signé avec un certificat Apple Developer ID et notarisé par
+   Apple. Voir l'aide
    [Apple sur l'ouverture d'applications non identifiées](https://support.apple.com/en-us/102445).
 4. Ouvrez **PerfComparator.app** depuis `~/Applications` ou son raccourci sur le
    Bureau, s'il a été créé.

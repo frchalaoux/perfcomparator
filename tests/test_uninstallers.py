@@ -23,7 +23,7 @@ def test_posix_uninstaller_removes_only_product_files(tmp_path: Path, platform: 
         'printf "%s\\n" "$*" >> "$UV_LOG"\n'
         'case "$*" in\n'
         '  "tool dir --bin") printf "%s\\n" "$UV_TOOL_BIN" ;;\n'
-        '  "tool list") printf "%s\\n" "perfcomparator v0.5.0.dev0" ;;\n'
+        '  "tool list") printf "%s\\n" "perfcomparator v0.5.0" ;;\n'
         '  "tool uninstall perfcomparator") ;;\n'
         "  *) exit 2 ;;\n"
         "esac\n",
@@ -117,7 +117,7 @@ def test_posix_uninstaller_requires_confirmation_without_tty(tmp_path: Path) -> 
         "#!/bin/sh\n"
         'case "$*" in\n'
         '  "tool dir --bin") printf "%s\\n" "$UV_TOOL_BIN" ;;\n'
-        '  "tool list") printf "%s\\n" "perfcomparator v0.5.0.dev0" ;;\n'
+        '  "tool list") printf "%s\\n" "perfcomparator v0.5.0" ;;\n'
         "esac\n",
         encoding="utf-8",
     )

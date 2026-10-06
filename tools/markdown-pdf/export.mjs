@@ -18,7 +18,7 @@ const mmdc = path.join(
 const markdown = new MarkdownIt({ html: true, linkify: true, typographer: true });
 
 function usage() {
-  console.error('Usage: npm run export -- <input.md> [--layout inline] [-o|--output <output.pdf>]');
+  console.error('Usage: npm run export -- <input.md> [--layout inline|appendix] [-o|--output <output.pdf>]');
   process.exit(2);
 }
 
@@ -34,7 +34,7 @@ function parseArgs(args) {
       if (!output) usage();
     } else if (args[i] === '--layout') {
       layout = args[++i];
-      if (layout !== 'inline') usage();
+      if (!['inline', 'appendix'].includes(layout)) usage();
     } else if (args[i].startsWith('-')) {
       usage();
     } else if (input) {
@@ -108,6 +108,7 @@ function htmlDocument(body, baseUrl) {
       th, td { border: 1px solid #999; padding: 5px 7px; vertical-align: top; }
       th { background: #eee; }
       img { max-width: 100%; }
+      .figure-reference { margin: 0.25em 0 1em; font-style: italic; }
       figure.mermaid-portrait {
         display: flex;
         align-items: center;
@@ -230,6 +231,7 @@ async function main() {
   let browser;
   const fragments = [];
   const flowBlocks = [];
+  const appendixDiagrams = [];
   let diagramNumber = 0;
 
   try {
@@ -251,7 +253,11 @@ async function main() {
         await writeFile(mermaidInput, section.source, 'utf8');
         renderMermaidSvg(mermaidInput, svgPath);
         const svg = await readFile(svgPath, 'utf8');
-        if (svgRatio(svg) > 1) {
+        if (layout === 'appendix') {
+          appendixDiagrams.push({ number: diagramNumber, svg });
+          flowBlocks.push(`<p class="figure-reference"><em>(voir figure n° ${diagramNumber})</em></p>`);
+          console.log(`Diagramme ${diagramNumber} : renvoi vers l’annexe`);
+        } else if (svgRatio(svg) > 1) {
           const heading = popTrailingHeading(flowBlocks);
           await flushFlow();
           fragments.push(await renderDiagram(browser, svg, heading));
@@ -263,6 +269,12 @@ async function main() {
       }
     }
     await flushFlow();
+
+    for (const diagram of appendixDiagrams) {
+      const heading = `<h2>Figure n° ${diagram.number}</h2>`;
+      fragments.push(await renderDiagram(browser, diagram.svg, heading));
+      console.log(`Figure n° ${diagram.number} : page A4 ${svgRatio(diagram.svg) > 1 ? 'paysage' : 'portrait'}`);
+    }
 
     const result = await PDFDocument.create();
     for (const fragment of fragments) {

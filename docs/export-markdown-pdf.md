@@ -29,6 +29,13 @@ La mise en page peut être choisie explicitement :
 npm --prefix tools/markdown-pdf run export -- docs/strategie-publication.md --layout inline
 ```
 
+Pour placer tous les diagrammes à la fin du document et ajouter un renvoi à
+leur emplacement d'origine :
+
+```bash
+npm --prefix tools/markdown-pdf run export -- docs/strategie-publication.md --layout appendix --output /chemin/vers/strategie-annexe.pdf
+```
+
 Par défaut, le PDF est créé à côté du Markdown avec le même nom et l'extension
 `.pdf`. Pour choisir un autre chemin :
 
@@ -41,6 +48,11 @@ diagramme portrait reste entier et partage la page courante s'il y tient ; sinon
 il passe à la suivante. Un diagramme plus large que haut est placé seul sur une
 page A4 paysage. Les autres blocs de code restent du texte ordinaire. Les
 images et liens relatifs sont résolus à partir du dossier du fichier Markdown.
+
+Avec `--layout appendix`, chaque bloc Mermaid est remplacé dans le texte par un
+renvoi « voir figure n° N », puis tous les schémas sont rassemblés après le
+texte, numérotés dans leur ordre d'apparition et chacun placé sur une page A4
+portrait ou paysage selon son ratio.
 
 Le script ne modifie pas le Markdown. Il ne traite pas les directives propres à
 des extensions Markdown non standard ; utiliser la syntaxe Markdown prise en

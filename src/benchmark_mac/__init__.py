@@ -8,5 +8,5 @@ __all__ = [
     "BenchmarkResult",
     "SystemSnapshot",
 ]
-__version__ = "0.5.0.dev0"
+__version__ = "0.5.0"
 BENCHMARK_PROTOCOL_VERSION = "0.3.0"

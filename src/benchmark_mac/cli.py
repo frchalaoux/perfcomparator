@@ -82,10 +82,14 @@ def desktop() -> None:
                 err=True,
             )
             raise typer.Exit(code=1) from error
-        typer.secho(f"Impossible d'ouvrir l'interface graphique : {error}", fg=typer.colors.RED, err=True)
+        typer.secho(
+            f"Impossible d'ouvrir l'interface graphique : {error}", fg=typer.colors.RED, err=True
+        )
         raise typer.Exit(code=1) from error
     except Exception as error:
-        typer.secho(f"Impossible d'ouvrir l'interface graphique : {error}", fg=typer.colors.RED, err=True)
+        typer.secho(
+            f"Impossible d'ouvrir l'interface graphique : {error}", fg=typer.colors.RED, err=True
+        )
         raise typer.Exit(code=1) from error
 
 
