@@ -1,5 +1,28 @@
 # Versions disponibles et installation
 
+## Version stable `v0.5.0`
+
+[Consulter le code source de `v0.5.0`](https://github.com/frchalaoux/perfcomparator/tree/v0.5.0) ·
+[Télécharger les installateurs](https://github.com/frchalaoux/perfcomparator/releases/tag/v0.5.0)
+
+Cette stable réunit les installateurs graphiques pour macOS, Windows et Linux,
+l'affichage de la version dans l'interface et les options d'export PDF.
+Les étapes complètes sont dans le [guide d'installation par système](installation.md).
+
+```bash
+curl -LsSf https://raw.githubusercontent.com/frchalaoux/perfcomparator/v0.5.0/install.sh | sh
+```
+
+```powershell
+irm https://raw.githubusercontent.com/frchalaoux/perfcomparator/v0.5.0/install.ps1 | iex
+```
+
+Après installation, `perfcomparator --version` affiche `PerfComparator 0.5.0`.
+La préversion de développement actuelle est
+[`v0.5.0.dev0`](https://github.com/frchalaoux/perfcomparator/releases/tag/v0.5.0.dev0) ;
+la page des [tags](https://github.com/frchalaoux/perfcomparator/tags) recense
+toutes les versions publiées.
+
 ## Préversion publiée `v0.5.0.dev0`
 
 [Consulter le code source de `v0.5.0.dev0`](https://github.com/frchalaoux/perfcomparator/tree/v0.5.0.dev0)
@@ -28,7 +51,7 @@ réinstaller exactement la même suite sur plusieurs machines.
 
 ## Choisir une version
 
-### `v0.4.0` — stable
+### `v0.4.0` — stable antérieure
 
 [Consulter le code source de `v0.4.0`](https://github.com/frchalaoux/perfcomparator/tree/v0.4.0)
 
@@ -47,7 +70,7 @@ irm https://raw.githubusercontent.com/frchalaoux/perfcomparator/v0.4.0/install.p
 
 Après installation, `perfcomparator --version` affiche `PerfComparator 0.4.0`.
 La préversion de développement actuelle est
-[`v0.4.0.dev7`](https://github.com/frchalaoux/perfcomparator/tree/v0.4.0.dev7) ;
+[`v0.5.0.dev0`](https://github.com/frchalaoux/perfcomparator/tree/v0.5.0.dev0) ;
 la page [de tous les tags](https://github.com/frchalaoux/perfcomparator/tags)
 recense les versions publiées.
 

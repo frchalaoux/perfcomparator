@@ -37,7 +37,7 @@ Dans le compte macOS qui utilisera l'application, exécutez l'installateur shell
 depuis Terminal ou une session SSH :
 
 ```sh
-curl -LsSf https://raw.githubusercontent.com/frchalaoux/perfcomparator/v0.5.0.dev0/install.sh | sh
+curl -LsSf https://raw.githubusercontent.com/frchalaoux/perfcomparator/v0.5.0/install.sh | sh
 ```
 
 L'installation est propre au compte et ne demande pas de droits administrateur.
@@ -60,10 +60,10 @@ graphique ; elles ne sont pas nécessaires aux mesures lancées en SSH.
 
 Server Core ne fournit pas le bureau graphique de Windows Server ; il se gère
 notamment depuis PowerShell. Dans une session PowerShell ouverte sous le compte
-qui utilisera PerfComparator, exécutez l'installateur de cette préversion :
+qui utilisera PerfComparator, exécutez l'installateur de cette version :
 
 ```powershell
-irm https://raw.githubusercontent.com/frchalaoux/perfcomparator/v0.5.0.dev0/install.ps1 | iex
+irm https://raw.githubusercontent.com/frchalaoux/perfcomparator/v0.5.0/install.ps1 | iex
 ```
 
 PowerShell 5.1 suffit ; PowerShell 7 et l'invite de commandes ne sont pas
@@ -90,7 +90,7 @@ Sur un serveur Linux x86-64, l'installation se fait dans le compte courant, sans
 droits administrateur :
 
 ```sh
-curl -LsSf https://raw.githubusercontent.com/frchalaoux/perfcomparator/v0.5.0.dev0/install.sh | sh
+curl -LsSf https://raw.githubusercontent.com/frchalaoux/perfcomparator/v0.5.0/install.sh | sh
 ```
 
 L'installateur prépare `uv`, CPython 3.14.4 avec Tk et PerfComparator. Tk est
