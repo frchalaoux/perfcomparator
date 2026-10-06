@@ -6,12 +6,22 @@ systèmes d'exploitation installés en multiboot sur une même machine. Elle
 utilise les mêmes scénarios, paramètres et version exacte de CPython sur macOS,
 Windows et Linux, puis produit des rapports JSON portables.
 
-La stable actuelle est [`v0.4.0`](https://github.com/frchalaoux/perfcomparator/releases/tag/v0.4.0) ; la préversion de développement actuelle est [`v0.5.0.dev0`](https://github.com/frchalaoux/perfcomparator/releases/tag/v0.5.0.dev0).
+La stable actuelle est [`v0.5.0`](https://github.com/frchalaoux/perfcomparator/releases/tag/v0.5.0) ; la préversion de développement actuelle est [`v0.5.0.dev0`](https://github.com/frchalaoux/perfcomparator/releases/tag/v0.5.0.dev0).
 Retrouver [tous les tags](https://github.com/frchalaoux/perfcomparator/tags).
 Consulter la [stratégie de publication](docs/strategie-publication.md).
 Télécharger l'application depuis la [page qui détecte votre système](https://frchalaoux.github.io/perfcomparator/).
 Consulter le [guide d'installation pour macOS, Windows et Linux](docs/installation.md).
 Consulter le [guide de désinstallation](docs/desinstallation.md).
+
+Installation directe de la stable `v0.5.0` :
+
+```sh
+curl -LsSf https://raw.githubusercontent.com/frchalaoux/perfcomparator/v0.5.0/install.sh | sh
+```
+
+```powershell
+irm https://raw.githubusercontent.com/frchalaoux/perfcomparator/v0.5.0/install.ps1 | iex
+```
 
 ## Préversion publiée `v0.5.0.dev0`
 
