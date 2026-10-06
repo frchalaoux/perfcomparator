@@ -8,7 +8,7 @@ from benchmark_mac import __version__
 ROOT = Path(__file__).parents[1]
 PUBLISHED_VERSION = "0.4.0"
 EXPECTED_TAG = f"v{PUBLISHED_VERSION}"
-CANDIDATE_TAG = "v0.5.0.dev0"
+CANDIDATE_TAG = "v0.5.0"
 
 
 def test_versions_are_consistent_across_package_and_installers() -> None:

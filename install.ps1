@@ -82,7 +82,7 @@ elseif ($env:BENCHMARK_MAC_VERSION) {
     $env:BENCHMARK_MAC_VERSION
 }
 else {
-    "v0.5.0.dev0"
+    "v0.5.0"
 }
 $pythonVersion = "3.14.4"
 $sourceUrl = if ($env:PERFCOMPARATOR_SOURCE) {

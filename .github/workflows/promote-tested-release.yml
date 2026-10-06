@@ -1,0 +1,113 @@
+name: Promote tested installers
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_run_id:
+        description: Successful Package desktop installers run tested on target systems
+        required: true
+        type: string
+      tag:
+        description: Existing tag pointing at the exact tested source commit
+        required: true
+        type: string
+
+permissions:
+  actions: read
+  contents: write
+
+jobs:
+  promote:
+    runs-on: ubuntu-24.04
+    env:
+      GH_TOKEN: ${{ github.token }}
+      SOURCE_RUN_ID: ${{ inputs.source_run_id }}
+      RELEASE_TAG: ${{ inputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - name: Validate tested run, tag, and artifacts
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          [[ "$GITHUB_REF" == "refs/heads/main" ]] || {
+            echo "Promotion must be dispatched from main." >&2
+            exit 1
+          }
+          [[ "$SOURCE_RUN_ID" =~ ^[0-9]+$ ]] || {
+            echo "source_run_id must be a numeric Actions run ID." >&2
+            exit 1
+          }
+          [[ "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(\.dev[0-9]+)?$ ]] || {
+            echo "Tag must follow vX.Y.Z or vX.Y.Z.devK." >&2
+            exit 1
+          }
+
+          run_json=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$SOURCE_RUN_ID")
+          jq -e \
+            --arg workflow_path ".github/workflows/package-installers.yml" \
+            '.status == "completed" and .conclusion == "success" and
+             .event == "workflow_dispatch" and .head_branch == "main" and
+             .path == $workflow_path' <<< "$run_json" >/dev/null || {
+            echo "The source run must be a successful manual package build from main." >&2
+            exit 1
+          }
+          source_sha=$(jq -r '.head_sha' <<< "$run_json")
+          git fetch --no-tags origin "refs/tags/$RELEASE_TAG:refs/tags/$RELEASE_TAG"
+          tag_sha=$(git rev-parse "${RELEASE_TAG}^{commit}")
+          [[ "$source_sha" == "$tag_sha" ]] || {
+            echo "Tag commit $tag_sha differs from tested commit $source_sha." >&2
+            exit 1
+          }
+
+          mkdir -p dist
+          gh run download "$SOURCE_RUN_ID" \
+            --name "installer-test-$source_sha" \
+            --dir dist
+          manifest=dist/installers-manifest.txt
+          test -f "$manifest"
+          grep -Fqx "Source commit: $source_sha" "$manifest"
+          grep -Fqx "Package version: $RELEASE_TAG" "$manifest"
+
+          required=(
+            PerfComparator-macOS.zip
+            PerfComparator-uninstall-macOS.sh
+            PerfComparator-Windows-x64.zip
+            PerfComparator-uninstall-Windows.ps1
+            PerfComparator-Linux-x86_64.tar.gz
+            PerfComparator-Ubuntu-Debian-amd64.deb
+            PerfComparator-uninstall-Linux.sh
+          )
+          for file in "${required[@]}"; do
+            test -f "dist/$file" || { echo "Missing artifact: $file" >&2; exit 1; }
+          done
+          awk '/^SHA-256:$/ { checksums=1; next } checksums { print }' "$manifest" > dist/checksums.txt
+          test "$(wc -l < dist/checksums.txt | tr -d ' ')" -eq "${#required[@]}"
+          (cd dist && sha256sum --check --strict checksums.txt)
+
+      - name: Publish Release with the tested files (no rebuild)
+        shell: bash
+        run: |
+          set -euo pipefail
+          release_type=()
+          if [[ "$RELEASE_TAG" =~ \.dev[0-9]+$ ]]; then
+            release_type+=(--prerelease --latest=false)
+          else
+            release_type+=(--latest)
+          fi
+          gh release create "$RELEASE_TAG" \
+            dist/PerfComparator-macOS.zip \
+            dist/PerfComparator-Windows-x64.zip \
+            dist/PerfComparator-Linux-x86_64.tar.gz \
+            dist/PerfComparator-Ubuntu-Debian-amd64.deb \
+            dist/PerfComparator-uninstall-macOS.sh \
+            dist/PerfComparator-uninstall-Windows.ps1 \
+            dist/PerfComparator-uninstall-Linux.sh \
+            dist/installers-manifest.txt \
+            --verify-tag \
+            --title "PerfComparator $RELEASE_TAG" \
+            --generate-notes \
+            "${release_type[@]}"

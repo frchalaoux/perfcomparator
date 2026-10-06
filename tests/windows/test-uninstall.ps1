@@ -39,7 +39,7 @@ try {
 @echo off
 echo %*>>"%FAKE_UV_LOG%"
 if "%~1"=="tool" if "%~2"=="list" (
-  echo perfcomparator v0.5.0.dev0
+  echo perfcomparator v0.5.0
   exit /b 0
 )
 if "%~1"=="tool" if "%~2"=="dir" (

@@ -1,8 +1,6 @@
 name: Package desktop installers
 
 on:
-  release:
-    types: [published]
   workflow_dispatch:
 
 permissions:
@@ -17,9 +15,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.event_name == 'release' && github.event.release.tag_name || github.sha }}
+          ref: ${{ github.sha }}
       - name: Require main for temporary test builds
-        if: github.event_name == 'workflow_dispatch'
         run: |
           if [ "$GITHUB_REF" != "refs/heads/main" ]; then
             echo "Temporary installer builds must be launched from main." >&2
@@ -27,16 +24,10 @@ jobs:
           fi
       - name: Record exact source commit and package version
         id: metadata
-        env:
-          RELEASE_TAG: ${{ github.event.release.tag_name }}
         run: |
           source_sha=$(git rev-parse HEAD)
-          if [ "$GITHUB_EVENT_NAME" = "release" ]; then
-            package_version="$RELEASE_TAG"
-          else
-            project_version=$(python -c 'import pathlib, tomllib; print(tomllib.loads(pathlib.Path("pyproject.toml").read_text())["project"]["version"])')
-            package_version="v$project_version"
-          fi
+          project_version=$(python -c 'import pathlib, tomllib; print(tomllib.loads(pathlib.Path("pyproject.toml").read_text())["project"]["version"])')
+          package_version="v$project_version"
           echo "source_sha=$source_sha" >> "$GITHUB_OUTPUT"
           echo "package_version=$package_version" >> "$GITHUB_OUTPUT"
           echo "Source commit: $source_sha"
@@ -51,7 +42,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.event_name == 'release' && github.event.release.tag_name || github.sha }}
+          ref: ${{ github.sha }}
       - name: Build installer archive
         run: |
           test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
@@ -79,7 +70,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.event_name == 'release' && github.event.release.tag_name || github.sha }}
+          ref: ${{ github.sha }}
       - name: Build installer archive
         shell: pwsh
         run: |
@@ -111,7 +102,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.event_name == 'release' && github.event.release.tag_name || github.sha }}
+          ref: ${{ github.sha }}
       - name: Build installer archive
         run: |
           test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
@@ -203,32 +194,3 @@ jobs:
           path: dist/*
           if-no-files-found: error
           retention-days: 14
-
-  publish:
-    if: github.event_name == 'release'
-    needs: [prepare, package-artifacts]
-    runs-on: ubuntu-24.04
-    permissions:
-      contents: write
-    env:
-      RELEASE_TAG: ${{ github.event.release.tag_name }}
-    steps:
-      - uses: actions/download-artifact@v4
-        with:
-          name: installer-test-${{ needs.prepare.outputs.source_sha }}
-          path: dist
-      - name: Attach the exact built files and manifest to the release
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          gh release upload \
-            "$RELEASE_TAG" \
-            dist/PerfComparator-macOS.zip \
-            dist/PerfComparator-Windows-x64.zip \
-            dist/PerfComparator-Linux-x86_64.tar.gz \
-            dist/PerfComparator-Ubuntu-Debian-amd64.deb \
-            dist/PerfComparator-uninstall-macOS.sh \
-            dist/PerfComparator-uninstall-Windows.ps1 \
-            dist/PerfComparator-uninstall-Linux.sh \
-            dist/installers-manifest.txt \
-            --repo frchalaoux/perfcomparator

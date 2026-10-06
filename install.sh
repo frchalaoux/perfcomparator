@@ -3,7 +3,7 @@
 # Python n'a pas besoin d'être déjà installé : uv gère la version reproductible.
 set -eu
 
-release_version="${PERFCOMPARATOR_VERSION:-${BENCHMARK_MAC_VERSION:-v0.5.0.dev0}}"
+release_version="${PERFCOMPARATOR_VERSION:-${BENCHMARK_MAC_VERSION:-v0.5.0}}"
 python_version="3.14.4"
 script_dir=""
 if [ -f "$0" ]; then

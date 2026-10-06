@@ -8,6 +8,9 @@ def test_download_page_exposes_cross_platform_uninstallers() -> None:
     workflow = (ROOT / ".github" / "workflows" / "package-installers.yml").read_text(
         encoding="utf-8"
     )
+    promotion = (ROOT / ".github" / "workflows" / "promote-tested-release.yml").read_text(
+        encoding="utf-8"
+    )
     expected_assets = (
         "PerfComparator-uninstall-macOS.sh",
         "PerfComparator-uninstall-Windows.ps1",
@@ -17,7 +20,11 @@ def test_download_page_exposes_cross_platform_uninstallers() -> None:
     for asset_name in expected_assets:
         assert f'data-asset="{asset_name}"' in page
         assert asset_name in workflow
-        assert "gh release upload" in workflow
+        assert asset_name in promotion
+
+    assert "gh run download" in promotion
+    assert "sha256sum --check --strict" in promotion
+    assert "gh release create" in promotion
 
     assert page.count('<a class="download" data-uninstaller ') == len(expected_assets)
     assert page.count("data-fallback-url=") == len(expected_assets)

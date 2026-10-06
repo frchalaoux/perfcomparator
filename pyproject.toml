@@ -1,6 +1,6 @@
 [project]
 name = "perfcomparator"
-version = "0.5.0.dev0"
+version = "0.5.0"
 description = "Suite de benchmarks locaux et reproductibles pour macOS, Windows et Linux"
 readme = "README.md"
 requires-python = ">=3.14,<3.15"

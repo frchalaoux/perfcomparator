@@ -1,0 +1,14 @@
+{
+  "name": "perfcomparator-markdown-pdf",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "export": "node export.mjs"
+  },
+  "dependencies": {
+    "@mermaid-js/mermaid-cli": "12.0.0",
+    "markdown-it": "15.0.2",
+    "pdf-lib": "1.17.1",
+    "puppeteer": "25.12.0"
+  }
+}
