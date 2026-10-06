@@ -8,6 +8,7 @@ import webbrowser
 from pathlib import Path
 from tkinter import BOTH, LEFT, Label, StringVar, Tk, W, messagebox, ttk
 
+from . import __version__
 from .benchmarks import DEFINITIONS
 from .models import BenchmarkFailure, BenchmarkResult
 from .repository import JsonReportRepository
@@ -20,7 +21,7 @@ class BenchmarkWindow:
 
     def __init__(self, root: Tk) -> None:
         self.root = root
-        root.title("PerfComparator")
+        root.title(f"PerfComparator {__version__}")
         root.minsize(480, 300)
 
         self.events: queue.Queue[tuple[str, object]] = queue.Queue()
@@ -72,6 +73,7 @@ class BenchmarkWindow:
             text="Les mesures sont enregistrées dans Documents/PerfComparator.",
             wraplength=430,
         ).pack(anchor=W, pady=(18, 0))
+        ttk.Label(body, text=f"Version {__version__}").pack(anchor=W, pady=(8, 0))
         root.after(100, self.process_events)
 
     def start(self) -> None:
