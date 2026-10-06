@@ -46,7 +46,7 @@ $versionExitCode = $LASTEXITCODE
 if ($versionExitCode -ne 0) {
     throw "perfcomparator --version failed (code $versionExitCode): $($versionOutput -join ' ')"
 }
-if (($versionOutput -join "`n") -notmatch "0\.5\.0\.dev0") {
+if (($versionOutput -join "`n") -notmatch "(?m)^PerfComparator 0\.5\.0$") {
     throw "Unexpected installed version: $($versionOutput -join ' ')"
 }
 
