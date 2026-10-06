@@ -10,13 +10,19 @@ La stable actuelle est [`v0.4.0`](https://github.com/frchalaoux/perfcomparator/r
 Retrouver [tous les tags](https://github.com/frchalaoux/perfcomparator/tags).
 Consulter la [stratégie de publication](docs/strategie-publication.md).
 Télécharger l'application depuis la [page qui détecte votre système](https://frchalaoux.github.io/perfcomparator/).
+Consulter le [guide d'installation pour macOS, Windows et Linux](docs/installation.md).
+Consulter le [guide de désinstallation](docs/desinstallation.md).
 
 ## Préversion publiée `v0.5.0.dev0`
 
 Cette préversion ajoute un installateur graphique par système : il installe
-`uv`, CPython avec Tk, PerfComparator, crée un lanceur de bureau puis ouvre
-l'interface. La page de téléchargement recommande l'archive macOS, Windows ou
-Linux en fonction du système détecté. Les trois archives sont disponibles dans
+`uv`, CPython avec Tk, PerfComparator et crée un lanceur de bureau. L'interface
+ne se lance pas automatiquement à la fin de l'installation. L'installation
+Windows via `install.bat` utilise PowerShell 7 s'il est présent, sinon Windows
+PowerShell 5.1 ; l'installateur affiche la commande à utiliser pour ouvrir
+l'interface ou configurer une contribution.
+La page de téléchargement recommande l'archive macOS, Windows ou Linux en
+fonction du système détecté. Les trois archives sont disponibles dans
 la [release GitHub `v0.5.0.dev0`](https://github.com/frchalaoux/perfcomparator/releases/tag/v0.5.0.dev0).
 
 `v0.4.0` conserve le protocole de mesure `0.3.0` et ajoute notamment

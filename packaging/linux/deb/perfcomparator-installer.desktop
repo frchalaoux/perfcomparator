@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=Installer PerfComparator
+Comment=Installe uv, Python avec Tk et PerfComparator pour cet utilisateur
+Categories=Science;Utility;
+Terminal=true
+Exec=/usr/bin/perfcomparator-install

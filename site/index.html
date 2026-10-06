@@ -21,24 +21,36 @@
     <main>
       <h1>Télécharger PerfComparator</h1>
       <p>Choisissez l’installateur de votre système. Il préparera <code>uv</code>,
-        Python avec Tk et PerfComparator, puis ouvrira l’application.</p>
+        Python avec Tk et PerfComparator, puis créera un lanceur pour ouvrir l’application.</p>
       <p id="status" role="status" aria-live="polite">Détection du système…</p>
       <section class="card" data-platform="macos">
         <h2>macOS — Intel ou Apple silicon</h2>
         <p>L’installateur crée l’application PerfComparator dans votre dossier Applications.</p>
-        <a class="download" data-asset="PerfComparator-macOS.zip" aria-disabled="true">Télécharger pour macOS</a>
+        <a class="download" data-asset="PerfComparator-macOS.zip" data-required="true" aria-disabled="true">Télécharger pour macOS</a>
+        <p>Déjà installé ?</p>
+        <a class="download" data-uninstaller data-asset="PerfComparator-uninstall-macOS.sh" data-fallback-url="https://raw.githubusercontent.com/frchalaoux/perfcomparator/main/uninstall.sh" aria-disabled="true">Télécharger le désinstallateur macOS</a>
       </section>
       <section class="card" data-platform="windows">
         <h2>Windows</h2>
         <p>L’installateur crée une icône PerfComparator sur le Bureau.</p>
-        <a class="download" data-asset="PerfComparator-Windows-x64.zip" aria-disabled="true">Télécharger pour Windows</a>
+        <a class="download" data-asset="PerfComparator-Windows-x64.zip" data-required="true" aria-disabled="true">Télécharger pour Windows</a>
+        <p>Déjà installé ?</p>
+        <a class="download" data-uninstaller data-asset="PerfComparator-uninstall-Windows.ps1" data-fallback-url="https://raw.githubusercontent.com/frchalaoux/perfcomparator/main/uninstall.ps1" aria-disabled="true">Télécharger le désinstallateur Windows</a>
       </section>
       <section class="card" data-platform="linux">
         <h2>Linux — x86-64</h2>
-        <p>L’installateur crée un lanceur PerfComparator dans le menu des applications et sur le Bureau.</p>
-        <a class="download" data-asset="PerfComparator-Linux-x86_64.tar.gz" aria-disabled="true">Télécharger pour Linux</a>
+        <p>Pour Ubuntu et Debian, installez le paquet (confirmation système requise), puis lancez l’installateur PerfComparator depuis le menu des applications. <code>uv</code>, Python/Tk et l’application restent installés dans votre compte. Pour les autres distributions, utilisez l’archive autonome ; GNOME peut demander d’autoriser une fois son lanceur téléchargé.</p>
+        <p id="linux-deb-option" hidden>
+          <a class="download" data-asset="PerfComparator-Ubuntu-Debian-amd64.deb" aria-disabled="true">Télécharger le paquet Ubuntu/Debian (.deb)</a>
+        </p>
+        <p>Autres distributions Linux :</p>
+        <a class="download" data-asset="PerfComparator-Linux-x86_64.tar.gz" data-required="true" aria-disabled="true">Télécharger l’archive Linux (.tar.gz)</a>
+        <p>Déjà installé ?</p>
+        <a class="download" data-uninstaller data-asset="PerfComparator-uninstall-Linux.sh" data-fallback-url="https://raw.githubusercontent.com/frchalaoux/perfcomparator/main/uninstall.sh" aria-disabled="true">Télécharger le désinstallateur Linux</a>
       </section>
       <p class="muted">La détection sert à mettre en évidence le bon choix ; vous pouvez toujours sélectionner un autre système. Les téléchargements ne démarrent qu’après votre clic.</p>
+      <p><a href="https://github.com/frchalaoux/perfcomparator/blob/main/docs/installation.md">Lire le guide d’installation détaillé pour macOS, Windows et Linux</a></p>
+      <p><a href="https://github.com/frchalaoux/perfcomparator/blob/main/docs/desinstallation.md">Lire le guide de désinstallation</a></p>
       <p><a href="https://github.com/frchalaoux/perfcomparator/releases">Voir les versions et fichiers disponibles sur GitHub</a></p>
     </main>
     <script>
@@ -62,8 +74,8 @@
         if (!response.ok) throw new Error("Aucune version stable disponible");
         return response.json();
       }).then(releases => {
-        const assetNames = [...document.querySelectorAll("[data-asset]")].map(link => link.dataset.asset);
-        const hasInstallers = release => assetNames.every(name => release.assets.some(asset => asset.name === name));
+        const requiredAssetNames = [...document.querySelectorAll("[data-required='true']")].map(link => link.dataset.asset);
+        const hasInstallers = release => requiredAssetNames.every(name => release.assets.some(asset => asset.name === name));
         const release = releases.find(item => !item.prerelease && hasInstallers(item))
           || releases.find(item => item.prerelease && hasInstallers(item));
         if (!release) {
@@ -71,15 +83,28 @@
           return;
         }
         let available = 0;
-        document.querySelectorAll("[data-asset]").forEach(link => {
+        document.querySelectorAll("[data-asset]:not([data-uninstaller])").forEach(link => {
           const asset = release.assets.find(item => item.name === link.dataset.asset);
           if (asset) {
             link.href = asset.browser_download_url;
             link.removeAttribute("aria-disabled");
+            if (link.dataset.asset === "PerfComparator-Ubuntu-Debian-amd64.deb") {
+              document.querySelector("#linux-deb-option").hidden = false;
+            }
             available += 1;
           }
         });
-        status.textContent = `${release.prerelease ? "Préversion" : "Version stable"} ${release.tag_name} : ${available} installateurs disponibles.`;
+        let availableUninstallers = 0;
+        document.querySelectorAll("[data-uninstaller]").forEach(link => {
+          const asset = release.assets.find(item => item.name === link.dataset.asset);
+          const downloadUrl = asset?.browser_download_url || link.dataset.fallbackUrl;
+          if (downloadUrl) {
+            link.href = downloadUrl;
+            link.removeAttribute("aria-disabled");
+            availableUninstallers += 1;
+          }
+        });
+        status.textContent = `${release.prerelease ? "Préversion" : "Version stable"} ${release.tag_name} : ${available} installateurs et ${availableUninstallers} désinstallateurs disponibles.`;
       }).catch(() => {
         status.textContent = "Impossible de vérifier les téléchargements. Consultez les versions GitHub.";
       });

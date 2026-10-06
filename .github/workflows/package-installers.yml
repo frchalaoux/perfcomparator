@@ -3,86 +3,221 @@ name: Package desktop installers
 on:
   release:
     types: [published]
+  workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  macos:
-    runs-on: macos-15-intel
-    env:
-      RELEASE_TAG: ${{ github.event.release.tag_name }}
+  prepare:
+    runs-on: ubuntu-24.04
+    outputs:
+      source_sha: ${{ steps.metadata.outputs.source_sha }}
+      package_version: ${{ steps.metadata.outputs.package_version }}
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.release.tag_name }}
+          ref: ${{ github.event_name == 'release' && github.event.release.tag_name || github.sha }}
+      - name: Require main for temporary test builds
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          if [ "$GITHUB_REF" != "refs/heads/main" ]; then
+            echo "Temporary installer builds must be launched from main." >&2
+            exit 1
+          fi
+      - name: Record exact source commit and package version
+        id: metadata
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: |
+          source_sha=$(git rev-parse HEAD)
+          if [ "$GITHUB_EVENT_NAME" = "release" ]; then
+            package_version="$RELEASE_TAG"
+          else
+            project_version=$(python -c 'import pathlib, tomllib; print(tomllib.loads(pathlib.Path("pyproject.toml").read_text())["project"]["version"])')
+            package_version="v$project_version"
+          fi
+          echo "source_sha=$source_sha" >> "$GITHUB_OUTPUT"
+          echo "package_version=$package_version" >> "$GITHUB_OUTPUT"
+          echo "Source commit: $source_sha"
+          echo "Package version: $package_version"
+
+  macos:
+    needs: prepare
+    runs-on: macos-15-intel
+    env:
+      SOURCE_SHA: ${{ needs.prepare.outputs.source_sha }}
+      PACKAGE_VERSION: ${{ needs.prepare.outputs.package_version }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'release' && github.event.release.tag_name || github.sha }}
       - name: Build installer archive
         run: |
+          test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
           mkdir -p package/PerfComparator
-          cp install.command install.sh package/PerfComparator/
-          printf '%s\n' "$RELEASE_TAG" > package/PerfComparator/release-version.txt
+          cp install.command install.sh uninstall.sh package/PerfComparator/
+          cp uninstall.sh PerfComparator-uninstall-macOS.sh
+          printf '%s\n' "$PACKAGE_VERSION" > package/PerfComparator/release-version.txt
+          printf '%s\n' "$SOURCE_SHA" > package/PerfComparator/source-commit.txt
+          printf 'https://github.com/%s/archive/%s.tar.gz\n' "$GITHUB_REPOSITORY" "$SOURCE_SHA" > package/PerfComparator/source-url.txt
           ditto -c -k --sequesterRsrc --keepParent package/PerfComparator PerfComparator-macOS.zip
       - uses: actions/upload-artifact@v4
         with:
           name: installer-macos
-          path: PerfComparator-macOS.zip
+          path: |
+            PerfComparator-macOS.zip
+            PerfComparator-uninstall-macOS.sh
+          if-no-files-found: error
 
   windows:
+    needs: prepare
     runs-on: windows-latest
     env:
-      RELEASE_TAG: ${{ github.event.release.tag_name }}
+      SOURCE_SHA: ${{ needs.prepare.outputs.source_sha }}
+      PACKAGE_VERSION: ${{ needs.prepare.outputs.package_version }}
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.release.tag_name }}
+          ref: ${{ github.event_name == 'release' && github.event.release.tag_name || github.sha }}
       - name: Build installer archive
         shell: pwsh
         run: |
+          $actualSourceSha = (& git rev-parse HEAD).Trim()
+          if ($actualSourceSha -ne $env:SOURCE_SHA) { throw "Checkout SHA mismatch: $actualSourceSha" }
           New-Item -ItemType Directory -Path package/PerfComparator -Force | Out-Null
-          Copy-Item install.bat, install.ps1 package/PerfComparator/
-          [System.IO.File]::WriteAllText(
-            (Join-Path (Get-Location) 'package/PerfComparator/release-version.txt'),
-            $env:RELEASE_TAG,
-            [System.Text.Encoding]::ASCII
-          )
+          Copy-Item install.bat, install.ps1, uninstall.ps1 package/PerfComparator/
+          Copy-Item uninstall.ps1 PerfComparator-uninstall-Windows.ps1
+          $bundle = Join-Path (Get-Location) 'package/PerfComparator'
+          [System.IO.File]::WriteAllText((Join-Path $bundle 'release-version.txt'), $env:PACKAGE_VERSION, [System.Text.Encoding]::ASCII)
+          [System.IO.File]::WriteAllText((Join-Path $bundle 'source-commit.txt'), $env:SOURCE_SHA, [System.Text.Encoding]::ASCII)
+          $sourceUrl = "{0}/{1}/archive/{2}.tar.gz" -f $env:GITHUB_SERVER_URL.TrimEnd('/'), $env:GITHUB_REPOSITORY, $env:SOURCE_SHA
+          [System.IO.File]::WriteAllText((Join-Path $bundle 'source-url.txt'), $sourceUrl, [System.Text.Encoding]::ASCII)
           Compress-Archive -Path package/PerfComparator/* -DestinationPath PerfComparator-Windows-x64.zip
       - uses: actions/upload-artifact@v4
         with:
           name: installer-windows
-          path: PerfComparator-Windows-x64.zip
+          path: |
+            PerfComparator-Windows-x64.zip
+            PerfComparator-uninstall-Windows.ps1
+          if-no-files-found: error
 
   linux:
+    needs: prepare
     runs-on: ubuntu-24.04
     env:
-      RELEASE_TAG: ${{ github.event.release.tag_name }}
+      SOURCE_SHA: ${{ needs.prepare.outputs.source_sha }}
+      PACKAGE_VERSION: ${{ needs.prepare.outputs.package_version }}
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.release.tag_name }}
+          ref: ${{ github.event_name == 'release' && github.event.release.tag_name || github.sha }}
       - name: Build installer archive
         run: |
+          test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
           mkdir -p package/PerfComparator
-          cp install.desktop install-linux.sh install.sh package/PerfComparator/
-          printf '%s\n' "$RELEASE_TAG" > package/PerfComparator/release-version.txt
-          chmod 755 package/PerfComparator/install-linux.sh package/PerfComparator/install.sh package/PerfComparator/install.desktop
+          cp install.desktop install-linux.sh install.sh uninstall.sh package/PerfComparator/
+          cp uninstall.sh PerfComparator-uninstall-Linux.sh
+          printf '%s\n' "$PACKAGE_VERSION" > package/PerfComparator/release-version.txt
+          printf '%s\n' "$SOURCE_SHA" > package/PerfComparator/source-commit.txt
+          printf 'https://github.com/%s/archive/%s.tar.gz\n' "$GITHUB_REPOSITORY" "$SOURCE_SHA" > package/PerfComparator/source-url.txt
+          chmod 755 \
+            package/PerfComparator/install-linux.sh \
+            package/PerfComparator/install.sh \
+            package/PerfComparator/uninstall.sh \
+            package/PerfComparator/install.desktop \
+            PerfComparator-uninstall-Linux.sh
           tar -czf PerfComparator-Linux-x86_64.tar.gz -C package PerfComparator
       - uses: actions/upload-artifact@v4
         with:
           name: installer-linux
-          path: PerfComparator-Linux-x86_64.tar.gz
+          path: |
+            PerfComparator-Linux-x86_64.tar.gz
+            PerfComparator-uninstall-Linux.sh
+          if-no-files-found: error
+      - name: Build Ubuntu/Debian package
+        run: |
+          test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
+          bash packaging/linux/build-deb.sh "$PACKAGE_VERSION" dist
+      - uses: actions/upload-artifact@v4
+        with:
+          name: installer-linux-deb
+          path: dist/PerfComparator-Ubuntu-Debian-amd64.deb
+          if-no-files-found: error
 
-  publish:
-    needs: [macos, windows, linux]
+  package-artifacts:
+    needs: [prepare, macos, windows, linux]
     runs-on: ubuntu-24.04
     env:
-      RELEASE_TAG: ${{ github.event.release.tag_name }}
+      SOURCE_SHA: ${{ needs.prepare.outputs.source_sha }}
+      PACKAGE_VERSION: ${{ needs.prepare.outputs.package_version }}
     steps:
       - uses: actions/download-artifact@v4
         with:
           pattern: installer-*
           path: dist
           merge-multiple: true
-      - name: Attach all installer archives to the release
+      - name: Verify files and write SHA-256 manifest
+        shell: bash
+        run: |
+          set -euo pipefail
+          required=(
+            PerfComparator-macOS.zip
+            PerfComparator-uninstall-macOS.sh
+            PerfComparator-Windows-x64.zip
+            PerfComparator-uninstall-Windows.ps1
+            PerfComparator-Linux-x86_64.tar.gz
+            PerfComparator-Ubuntu-Debian-amd64.deb
+            PerfComparator-uninstall-Linux.sh
+          )
+          for file in "${required[@]}"; do
+            test -f "dist/$file" || { echo "Missing installer artifact: $file" >&2; exit 1; }
+          done
+          expected_source_url="https://github.com/$GITHUB_REPOSITORY/archive/$SOURCE_SHA.tar.gz"
+          temp_dir=$(mktemp -d)
+          trap 'rm -rf "$temp_dir"' EXIT
+          verify_zip_source() {
+            archive=$1
+            commit_path=$(unzip -Z1 "$archive" | grep -E '(^|/)source-commit.txt$' | head -n 1 || true)
+            url_path=$(unzip -Z1 "$archive" | grep -E '(^|/)source-url.txt$' | head -n 1 || true)
+            test -n "$commit_path" && test -n "$url_path"
+            test "$(unzip -p "$archive" "$commit_path" | tr -d '\r\n')" = "$SOURCE_SHA"
+            test "$(unzip -p "$archive" "$url_path" | tr -d '\r\n')" = "$expected_source_url"
+          }
+          verify_zip_source dist/PerfComparator-macOS.zip
+          verify_zip_source dist/PerfComparator-Windows-x64.zip
+          test "$(tar -xOf dist/PerfComparator-Linux-x86_64.tar.gz PerfComparator/source-commit.txt | tr -d '\r\n')" = "$SOURCE_SHA"
+          test "$(tar -xOf dist/PerfComparator-Linux-x86_64.tar.gz PerfComparator/source-url.txt | tr -d '\r\n')" = "$expected_source_url"
+          dpkg-deb --extract dist/PerfComparator-Ubuntu-Debian-amd64.deb "$temp_dir/deb"
+          test "$(cat "$temp_dir/deb/usr/lib/perfcomparator-installer/source-commit.txt")" = "$SOURCE_SHA"
+          test "$(cat "$temp_dir/deb/usr/lib/perfcomparator-installer/source-url.txt")" = "$expected_source_url"
+          {
+            printf 'Source commit: %s\n' "$SOURCE_SHA"
+            printf 'Package version: %s\n\n' "$PACKAGE_VERSION"
+            printf 'SHA-256:\n'
+            (cd dist && sha256sum "${required[@]}")
+          } > dist/installers-manifest.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: installer-test-${{ needs.prepare.outputs.source_sha }}
+          path: dist/*
+          if-no-files-found: error
+          retention-days: 14
+
+  publish:
+    if: github.event_name == 'release'
+    needs: [prepare, package-artifacts]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    env:
+      RELEASE_TAG: ${{ github.event.release.tag_name }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: installer-test-${{ needs.prepare.outputs.source_sha }}
+          path: dist
+      - name: Attach the exact built files and manifest to the release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -91,4 +226,9 @@ jobs:
             dist/PerfComparator-macOS.zip \
             dist/PerfComparator-Windows-x64.zip \
             dist/PerfComparator-Linux-x86_64.tar.gz \
+            dist/PerfComparator-Ubuntu-Debian-amd64.deb \
+            dist/PerfComparator-uninstall-macOS.sh \
+            dist/PerfComparator-uninstall-Windows.ps1 \
+            dist/PerfComparator-uninstall-Linux.sh \
+            dist/installers-manifest.txt \
             --repo frchalaoux/perfcomparator

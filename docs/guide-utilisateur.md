@@ -16,10 +16,12 @@ un terminal avec une installation existante :
 perfcomparator desktop
 ```
 
-L'installateur prépare `uv`, Python géré par `uv` et PerfComparator, puis ouvre
-l'interface. Le lanceur Windows utilise `pythonw` afin de ne pas afficher une
-fenêtre de console. Sur macOS et Linux, l'interface nécessite un environnement
-de bureau capable d'afficher Tk.
+L'installateur prépare `uv`, Python géré par `uv` et PerfComparator, puis crée
+les raccourcis : l'interface ne s'ouvre pas automatiquement à la fin de
+l'installation. Le lanceur Windows utilise `pythonw` afin de ne pas afficher
+une fenêtre de console. Sur macOS et Linux, l'interface nécessite un
+environnement de bureau capable d'afficher Tk. Pour les étapes propres à chaque
+système, consulter le [guide d'installation](installation.md).
 
 ## Préparer une machine
 

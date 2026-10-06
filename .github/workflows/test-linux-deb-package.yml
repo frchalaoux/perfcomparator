@@ -1,0 +1,34 @@
+name: Linux Debian package test
+
+on:
+  pull_request:
+    paths:
+      - .github/workflows/test-linux-deb-package.yml
+      - .github/workflows/package-installers.yml
+      - packaging/linux/**
+      - tests/linux/**
+      - install-linux.sh
+      - install.sh
+      - uninstall.sh
+  push:
+    branches:
+      - feat/desktop-launcher
+    paths:
+      - .github/workflows/test-linux-deb-package.yml
+      - .github/workflows/package-installers.yml
+      - packaging/linux/**
+      - tests/linux/**
+      - install-linux.sh
+      - install.sh
+      - uninstall.sh
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-inspect-deb:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build and inspect Ubuntu/Debian package
+        run: sh tests/linux/test-deb-package.sh v0.5.0.dev0

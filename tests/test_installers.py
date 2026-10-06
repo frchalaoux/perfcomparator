@@ -36,12 +36,27 @@ def test_versions_are_consistent_across_package_and_installers() -> None:
     assert "BENCHMARK_MAC_VERSION" in posix_installer
     assert "BENCHMARK_MAC_VERSION" in windows_installer
     assert "tool uninstall benchmark-mac" in posix_installer
-    assert "tool uninstall benchmark-mac" in windows_installer
-    assert "setup-contribution --yes" in posix_installer
-    assert "setup-contribution --yes" in windows_installer
+    assert 'ArgumentList @("tool", "uninstall", "benchmark-mac")' in windows_installer
+    assert "setup-contribution --yes" not in posix_installer
+    assert "setup-contribution --yes" not in windows_installer
+    assert "perfcomparator setup-contribution" in posix_installer
+    assert "perfcomparator setup-contribution" in windows_installer
+    assert "Start-Process" not in windows_installer
+    assert 'open "$app_dir"' not in posix_installer
+    assert '\n            "$launcher"\n' not in posix_installer
+    windows_batch = (ROOT / "install.bat").read_text(encoding="utf-8")
+    assert "where pwsh.exe" in windows_batch
+    assert "pwsh.exe -NoProfile" in windows_batch
+    assert "powershell.exe -NoProfile" in windows_batch
+    assert windows_batch.index("pwsh.exe -NoProfile") < windows_batch.index(
+        "powershell.exe -NoProfile"
+    )
+    assert "Compatible avec Windows PowerShell 5.1 et PowerShell 7." in windows_installer
     assert "Install-CurrentUv" in windows_installer
-    assert "-File $installerPath" in windows_installer
+    assert 'Join-Path $PSScriptRoot "source-url.txt"' in windows_installer
+    assert '"-File", $installerPath' in windows_installer
     assert "irm https://astral.sh/uv/install.ps1 | iex" not in windows_installer
+    assert "Graphical shortcut not created; CLI remains available." in windows_installer
     expected_posix_url = (
         f"https://raw.githubusercontent.com/frchalaoux/perfcomparator/{EXPECTED_TAG}/install.sh"
     )
@@ -54,6 +69,21 @@ def test_versions_are_consistent_across_package_and_installers() -> None:
         assert expected_windows_url in document
     assert "/v0.3.0.dev0/install.sh" in versions
     assert "/v0.3.0.dev0/install.ps1" in versions
+
+
+def test_release_archives_include_platform_uninstallers() -> None:
+    workflow = (ROOT / ".github" / "workflows" / "package-installers.yml").read_text(
+        encoding="utf-8"
+    )
+
+    assert "cp install.command install.sh uninstall.sh" in workflow
+    assert "Copy-Item install.bat, install.ps1, uninstall.ps1" in workflow
+    assert "cp install.desktop install-linux.sh install.sh uninstall.sh" in workflow
+    assert "workflow_dispatch" in workflow
+    assert "installer-test-${{ needs.prepare.outputs.source_sha }}" in workflow
+    assert "retention-days: 14" in workflow
+    assert "Source commit: %s" in workflow
+    assert "archive/%s.tar.gz" in workflow
 
 
 def test_posix_installer_defaults_to_its_own_tag(tmp_path: Path) -> None:
@@ -104,7 +134,31 @@ def test_posix_installer_honors_an_explicit_source(tmp_path: Path) -> None:
     assert source in log.read_text(encoding="utf-8")
 
 
-def test_posix_installer_prepares_the_guided_contribution_tool(tmp_path: Path) -> None:
+def test_posix_installer_uses_source_url_bundled_with_the_archive(tmp_path: Path) -> None:
+    installer = tmp_path / "install.sh"
+    installer.write_text((ROOT / "install.sh").read_text(encoding="utf-8"), encoding="utf-8")
+    source = "https://github.com/frchalaoux/perfcomparator/archive/0123456789abcdef.tar.gz"
+    (tmp_path / "source-url.txt").write_text(source + "\n", encoding="utf-8")
+    fake_bin = tmp_path / "bin"
+    fake_bin.mkdir()
+    uv = fake_bin / "uv"
+    uv.write_text('#!/bin/sh\nprintf "%s\\n" "$*" >> "$UV_LOG"\n', encoding="utf-8")
+    uv.chmod(0o755)
+    log = tmp_path / "uv.log"
+    environment = os.environ | {
+        "HOME": str(tmp_path),
+        "PATH": f"{fake_bin}{os.pathsep}{os.environ['PATH']}",
+        "UV_LOG": str(log),
+    }
+    environment.pop("BENCHMARK_MAC_SOURCE", None)
+    environment.pop("PERFCOMPARATOR_SOURCE", None)
+
+    subprocess.run(["sh", str(installer)], check=True, env=environment, capture_output=True)
+
+    assert source in log.read_text(encoding="utf-8")
+
+
+def test_posix_installer_leaves_contribution_setup_to_the_user(tmp_path: Path) -> None:
     installer = tmp_path / "install.sh"
     installer.write_text((ROOT / "install.sh").read_text(encoding="utf-8"), encoding="utf-8")
     fake_bin = tmp_path / "bin"
@@ -132,7 +186,7 @@ def test_posix_installer_prepares_the_guided_contribution_tool(tmp_path: Path) -
 
     subprocess.run(["sh", str(installer)], check=True, env=environment, capture_output=True)
 
-    assert log.read_text(encoding="utf-8").strip() == "setup-contribution --yes"
+    assert not log.exists()
 
 
 def test_posix_installer_cleans_up_the_legacy_tool_after_installing(tmp_path: Path) -> None:

@@ -51,6 +51,27 @@ séquence et réévaluer avant toute autre écriture distante. Une confirmation
 explicite peut couvrir une séquence annoncée en entier, mais n'autorise pas à en
 élargir le périmètre.
 
+## Tester les installateurs avant publication
+
+Pour tester les installateurs sans publier de tag ou de Release, intégrer
+d'abord les changements dans `main`, puis lancer **Actions → Package desktop
+installers → Run workflow** en choisissant `main`. Le workflow produit les
+archives macOS, Windows et Linux, le paquet Ubuntu / Debian `.deb` et les
+désinstallateurs autonomes sous la forme d'un artefact Actions temporaire
+(conservation de 14 jours).
+
+Chaque paquet contient le SHA complet de son commit source et une URL d'archive
+GitHub épinglée sur ce SHA ; son installateur utilise cette URL plutôt qu'une
+version antérieure par tag. L'artefact global inclut un manifeste indiquant le
+SHA source, la version du paquet et les empreintes SHA-256 des fichiers. Vérifier
+ce manifeste, puis tester exactement ces fichiers dans les VM et sur le Mac.
+Ne pas créer de préversion ou de Release pour ce parcours interne.
+
+La promotion d'un artefact Actions déjà testé vers une Release n'est pas encore
+automatisée. Le workflow déclenché par une Release reconstruit les paquets ; ne
+pas l'utiliser pour publier les résultats des essais tant que la promotion des
+mêmes fichiers n'est pas disponible.
+
 ## Préversions
 
 Les préversions utilisent la forme `vX.Y.Z.devK`, par exemple `v0.4.0.dev7` ;

@@ -5,11 +5,16 @@ set -eu
 
 release_version="${PERFCOMPARATOR_VERSION:-${BENCHMARK_MAC_VERSION:-v0.5.0.dev0}}"
 python_version="3.14.4"
-source_url="${PERFCOMPARATOR_SOURCE:-${BENCHMARK_MAC_SOURCE:-https://github.com/frchalaoux/perfcomparator/archive/refs/tags/${release_version}.tar.gz}}"
 script_dir=""
 if [ -f "$0" ]; then
     script_dir=$(CDPATH= cd -- "$(dirname -- "$0")" 2>/dev/null && pwd || true)
 fi
+
+bundled_source_url=""
+if [ -n "$script_dir" ] && [ -f "$script_dir/source-url.txt" ]; then
+    IFS= read -r bundled_source_url < "$script_dir/source-url.txt"
+fi
+source_url="${PERFCOMPARATOR_SOURCE:-${BENCHMARK_MAC_SOURCE:-${bundled_source_url:-https://github.com/frchalaoux/perfcomparator/archive/refs/tags/${release_version}.tar.gz}}}"
 
 if [ -n "$script_dir" ] && [ -f "$script_dir/pyproject.toml" ]; then
     source_url="$script_dir"
@@ -72,13 +77,6 @@ echo "Installation de PerfComparator ${release_version}..."
 
 tool_bin_dir=$("$uv_command" tool dir --bin)
 perfcomparator_command="${tool_bin_dir}/perfcomparator"
-if [ -x "$perfcomparator_command" ]; then
-    echo "Preparation de la contribution guidee..."
-    if ! "$perfcomparator_command" setup-contribution --yes; then
-        echo "Avertissement : GitHub CLI sera repropose lors de la premiere contribution." >&2
-    fi
-fi
-
 if [ -x "$perfcomparator_command" ] && [ -t 1 ]; then
     case "$(uname -s)" in
         Darwin)
@@ -103,7 +101,6 @@ if [ -x "$perfcomparator_command" ] && [ -t 1 ]; then
                 ln -s "$app_dir" "$desktop_dir/PerfComparator.app"
             fi
             echo "Création du lanceur : $app_dir"
-            open "$app_dir"
             ;;
         Linux)
             launcher="$HOME/.local/bin/perfcomparator-desktop"
@@ -132,7 +129,6 @@ if [ -x "$perfcomparator_command" ] && [ -t 1 ]; then
                 ln -s "$desktop_file" "$desktop_shortcut"
             fi
             echo "Création du lanceur : $desktop_file"
-            "$launcher"
             ;;
     esac
 else
@@ -142,4 +138,8 @@ else
     else
         echo "PerfComparator est installé. Fermez et rouvrez le terminal, puis lancez : perfcomparator desktop"
     fi
+fi
+
+if [ -x "$perfcomparator_command" ]; then
+    echo "Pour configurer une contribution GitHub : perfcomparator setup-contribution"
 fi
