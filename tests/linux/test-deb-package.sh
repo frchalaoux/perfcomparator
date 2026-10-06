@@ -18,6 +18,7 @@ expected_version=${release_tag#v}
 case "$expected_version" in
     *.dev*) expected_version=$(printf '%s' "$expected_version" | sed 's/\.dev/~dev/') ;;
 esac
+expected_source_commit=$(git -C "$repo_root" rev-parse HEAD)
 [ "$(dpkg-deb --field "$deb_file" Package)" = perfcomparator-installer ]
 [ "$(dpkg-deb --field "$deb_file" Version)" = "$expected_version" ]
 [ "$(dpkg-deb --field "$deb_file" Architecture)" = amd64 ]
@@ -28,6 +29,9 @@ esac
 [ -x "$package_root/usr/lib/perfcomparator-installer/uninstall.sh" ]
 [ -f "$package_root/usr/share/applications/perfcomparator-installer.desktop" ]
 [ "$(cat "$package_root/usr/lib/perfcomparator-installer/release-version.txt")" = "$release_tag" ]
+[ "$(cat "$package_root/usr/lib/perfcomparator-installer/source-commit.txt")" = "$expected_source_commit" ]
+[ "$(cat "$package_root/usr/lib/perfcomparator-installer/source-url.txt")" = \
+    "https://github.com/frchalaoux/perfcomparator/archive/$expected_source_commit.tar.gz" ]
 
 sh -n "$package_root/usr/bin/perfcomparator-install"
 sh -n "$package_root/usr/bin/perfcomparator-uninstall"

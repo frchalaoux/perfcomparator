@@ -19,14 +19,14 @@ def test_posix_uninstaller_removes_only_product_files(tmp_path: Path, platform: 
 
     uv = fake_bin / "uv"
     uv.write_text(
-        '#!/bin/sh\n'
+        "#!/bin/sh\n"
         'printf "%s\\n" "$*" >> "$UV_LOG"\n'
         'case "$*" in\n'
         '  "tool dir --bin") printf "%s\\n" "$UV_TOOL_BIN" ;;\n'
         '  "tool list") printf "%s\\n" "perfcomparator v0.5.0.dev0" ;;\n'
         '  "tool uninstall perfcomparator") ;;\n'
-        '  *) exit 2 ;;\n'
-        'esac\n',
+        "  *) exit 2 ;;\n"
+        "esac\n",
         encoding="utf-8",
     )
     uv.chmod(0o755)
@@ -56,8 +56,7 @@ def test_posix_uninstaller_removes_only_product_files(tmp_path: Path, platform: 
             f'#!/bin/sh\nexec "{tool_bin / "perfcomparator"}" desktop\n', encoding="utf-8"
         )
         desktop_file.write_text(
-            "[Desktop Entry]\nType=Application\nName=PerfComparator\n"
-            f'Exec="{launcher}"\n',
+            f'[Desktop Entry]\nType=Application\nName=PerfComparator\nExec="{launcher}"\n',
             encoding="utf-8",
         )
         desktop_link.symlink_to(desktop_file)
@@ -115,11 +114,11 @@ def test_posix_uninstaller_requires_confirmation_without_tty(tmp_path: Path) -> 
     fake_bin.mkdir()
     uv = fake_bin / "uv"
     uv.write_text(
-        '#!/bin/sh\n'
+        "#!/bin/sh\n"
         'case "$*" in\n'
         '  "tool dir --bin") printf "%s\\n" "$UV_TOOL_BIN" ;;\n'
         '  "tool list") printf "%s\\n" "perfcomparator v0.5.0.dev0" ;;\n'
-        'esac\n',
+        "esac\n",
         encoding="utf-8",
     )
     uv.chmod(0o755)
@@ -134,6 +133,7 @@ def test_posix_uninstaller_requires_confirmation_without_tty(tmp_path: Path) -> 
         env=environment,
         text=True,
         capture_output=True,
+        check=False,
     )
 
     assert result.returncode == 2

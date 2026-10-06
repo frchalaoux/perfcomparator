@@ -5,6 +5,7 @@ set -eu
 release_tag=${1:?Usage: build-deb.sh RELEASE_TAG [OUTPUT_DIR]}
 output_dir=${2:-dist}
 repo_root=$(CDPATH= cd -- "$(dirname -- "$0")/../.." && pwd)
+source_commit=$(git -C "$repo_root" rev-parse HEAD)
 
 if ! printf '%s\n' "$release_tag" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+(\.dev[0-9]+)?$'; then
     echo "Error: expected a release tag like v1.2.3 or v1.2.3.dev0." >&2
@@ -51,6 +52,10 @@ cp "$repo_root/packaging/linux/deb/perfcomparator-uninstall" \
     "$package_root/usr/bin/perfcomparator-uninstall"
 cp "$repo_root/install-linux.sh" "$repo_root/install.sh" "$repo_root/uninstall.sh" \
     "$package_root/usr/lib/perfcomparator-installer/"
+printf '%s\n' "$source_commit" \
+    > "$package_root/usr/lib/perfcomparator-installer/source-commit.txt"
+printf 'https://github.com/frchalaoux/perfcomparator/archive/%s.tar.gz\n' "$source_commit" \
+    > "$package_root/usr/lib/perfcomparator-installer/source-url.txt"
 printf '%s\n' "$release_tag" \
     > "$package_root/usr/lib/perfcomparator-installer/release-version.txt"
 chmod 755 \
@@ -62,6 +67,8 @@ chmod 755 \
 chmod 644 \
     "$package_root/DEBIAN/control" \
     "$package_root/usr/share/applications/perfcomparator-installer.desktop" \
+    "$package_root/usr/lib/perfcomparator-installer/source-commit.txt" \
+    "$package_root/usr/lib/perfcomparator-installer/source-url.txt" \
     "$package_root/usr/lib/perfcomparator-installer/release-version.txt"
 
 dpkg-deb --root-owner-group --build \

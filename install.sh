@@ -5,11 +5,16 @@ set -eu
 
 release_version="${PERFCOMPARATOR_VERSION:-${BENCHMARK_MAC_VERSION:-v0.5.0.dev0}}"
 python_version="3.14.4"
-source_url="${PERFCOMPARATOR_SOURCE:-${BENCHMARK_MAC_SOURCE:-https://github.com/frchalaoux/perfcomparator/archive/refs/tags/${release_version}.tar.gz}}"
 script_dir=""
 if [ -f "$0" ]; then
     script_dir=$(CDPATH= cd -- "$(dirname -- "$0")" 2>/dev/null && pwd || true)
 fi
+
+bundled_source_url=""
+if [ -n "$script_dir" ] && [ -f "$script_dir/source-url.txt" ]; then
+    IFS= read -r bundled_source_url < "$script_dir/source-url.txt"
+fi
+source_url="${PERFCOMPARATOR_SOURCE:-${BENCHMARK_MAC_SOURCE:-${bundled_source_url:-https://github.com/frchalaoux/perfcomparator/archive/refs/tags/${release_version}.tar.gz}}}"
 
 if [ -n "$script_dir" ] && [ -f "$script_dir/pyproject.toml" ]; then
     source_url="$script_dir"

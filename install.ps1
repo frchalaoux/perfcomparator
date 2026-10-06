@@ -91,6 +91,9 @@ $sourceUrl = if ($env:PERFCOMPARATOR_SOURCE) {
 elseif ($env:BENCHMARK_MAC_SOURCE) {
     $env:BENCHMARK_MAC_SOURCE
 }
+elseif ($PSScriptRoot -and (Test-Path -LiteralPath (Join-Path $PSScriptRoot "source-url.txt"))) {
+    (Get-Content -LiteralPath (Join-Path $PSScriptRoot "source-url.txt") -Raw).Trim()
+}
 else {
     "https://github.com/frchalaoux/perfcomparator/archive/refs/tags/$releaseVersion.tar.gz"
 }
