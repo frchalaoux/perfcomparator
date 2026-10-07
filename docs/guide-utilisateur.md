@@ -41,17 +41,9 @@ La version réellement exécutée se vérifie avec :
 perfcomparator --version
 ```
 
-Pour une installation GitHub, utiliser le nom affiché dans la
-[fiche des versions](versions.md). La stable actuelle est `v0.3.2`; sa
-préversion antérieure est `v0.3.2.dev0`. Les préversions suivent la convention
-`vX.Y.Z.devK`, avec tous leurs points.
-
-La préversion publiée `0.4.0.dev6` soumet uniquement le rapport public et
-laisse le catalogue générer son index au déploiement. La référence commerciale
-facultative vient de `0.4.0.dev5`, le nom commercial confirmé de `0.4.0.dev4`,
-la compatibilité des anciens rapports de `0.4.0.dev3`, la soumission guidée de
-`0.4.0.dev2` et le catalogue communautaire de `0.4.0.dev1`. Aucun numéro de
-série, UUID matériel ni nom d'hôte n'est exporté. La commande principale est
+La stable actuelle et les préversions disponibles sont répertoriées dans la
+[fiche des versions](versions.md). Les préversions suivent la convention
+`vX.Y.Z.devK`, avec tous leurs points. La commande principale est
 `perfcomparator` ; l'ancienne commande `benchmark-mac` reste un alias de
 compatibilité.
 
