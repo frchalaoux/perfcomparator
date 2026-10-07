@@ -194,7 +194,9 @@ ou choisir une version ci-dessous.
 
 | Version | Canal | À choisir pour | État |
 | --- | --- | --- | --- |
-| [`v0.4.0`](https://github.com/frchalaoux/perfcomparator/tree/v0.4.0) | Stable | Utiliser l'année du modèle Apple et contribuer au catalogue | Version recommandée |
+| [`v0.5.0`](https://github.com/frchalaoux/perfcomparator/tree/v0.5.0) | Stable | Installer l'application graphique, afficher sa version et exporter des PDF | Version recommandée |
+| [`v0.5.0.dev0`](https://github.com/frchalaoux/perfcomparator/tree/v0.5.0.dev0) | Développement publié | Tester les installateurs graphiques et les lanceurs par système | Préversion |
+| [`v0.4.0`](https://github.com/frchalaoux/perfcomparator/tree/v0.4.0) | Stable antérieure | Utiliser l'année du modèle Apple et contribuer au catalogue | Remplacée par `v0.5.0` |
 | [`v0.4.0.dev7`](https://github.com/frchalaoux/perfcomparator/tree/v0.4.0.dev7) | Développement publié | Identifier l'année du modèle Apple et contribuer clairement | Préversion |
 | [`v0.4.0.dev6`](https://github.com/frchalaoux/perfcomparator/tree/v0.4.0.dev6) | Développement publié | Soumettre un seul rapport sans maintenir d'index | Préversion |
 | [`v0.4.0.dev5`](https://github.com/frchalaoux/perfcomparator/tree/v0.4.0.dev5) | Développement publié | Identifier une configuration par sa référence commerciale facultative | Préversion |
