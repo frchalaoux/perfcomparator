@@ -63,27 +63,26 @@ manuel utile au diagnostic.
 
 ## 1. Installer la version qui prend en charge le catalogue
 
-Le parcours guidé nécessite PerfComparator `0.4.0.dev2` ou une version
-ultérieure. La version publiée recommandée pour ce tutoriel est
-`0.4.0.dev7`.
+Le parcours guidé est disponible dans la stable actuelle, PerfComparator
+`v0.5.0`, ainsi que dans les versions ultérieures compatibles.
 
 Sur macOS ou Linux :
 
 ```bash
-curl -LsSf https://raw.githubusercontent.com/frchalaoux/perfcomparator/v0.4.0.dev7/install.sh | sh
+curl -LsSf https://raw.githubusercontent.com/frchalaoux/perfcomparator/v0.5.0/install.sh | sh
 ```
 
 Sous Windows, dans PowerShell :
 
 ```powershell
-irm https://raw.githubusercontent.com/frchalaoux/perfcomparator/v0.4.0.dev7/install.ps1 | iex
+irm https://raw.githubusercontent.com/frchalaoux/perfcomparator/v0.5.0/install.ps1 | iex
 ```
 
 Contrôler l'installation :
 
 ```console
 $ perfcomparator --version
-PerfComparator 0.4.0.dev7
+PerfComparator 0.5.0
 ```
 
 ## 2. Mesurer la machine

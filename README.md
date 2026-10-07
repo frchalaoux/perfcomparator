@@ -32,7 +32,7 @@ pour contribuer au catalogue ; aucune donnée n'est envoyée sans action
 explicite.
 
 ```mermaid
-flowchart LR
+flowchart TB
     USER["Utilisateur"]
     subgraph MODES["Deux interfaces"]
         GUI["Interface graphique\nLancer et ouvrir un rapport"]
@@ -87,6 +87,37 @@ de protocole et des profils compatibles pour que la comparaison soit
 pertinente. La CLI fonctionne aussi sur un serveur sans bureau graphique.
 L'interface peut être ouverte depuis un terminal avec `perfcomparator desktop`.
 `perfcomparator --help` liste les autres commandes.
+
+## Publier, télécharger et comparer un rapport
+
+Le rapport complet produit par une campagne reste privé sur votre machine. Pour
+le partager, `perfcomparator contribute` prépare un export public distinct,
+demande le consentement CC0 et propose une contribution au catalogue. Après
+validation et publication, téléchargez le JSON public, puis comparez-le à vos
+rapports locaux. La comparaison s'effectue localement ; elle ne publie rien.
+
+```mermaid
+flowchart TD
+    RUN["perfcomparator run"] --> PRIVATE["Rapport privé JSON\nConservé localement"]
+    PRIVATE --> CONTRIBUTE["perfcomparator contribute\nAperçu et consentement CC0"]
+    CONTRIBUTE --> PR["Pull request au catalogue"]
+    PR --> CHECK{"Validation automatique"}
+    CHECK -->|À corriger| FIX["Corriger puis soumettre à nouveau"]
+    FIX --> CONTRIBUTE
+    CHECK -->|Conforme| MERGE["Fusion automatique de la contribution"]
+    MERGE --> DEPLOY["Déploiement du catalogue"]
+    DEPLOY --> CATALOGUE["Rapport public consultable"]
+    CATALOGUE --> DOWNLOAD["Télécharger le JSON"]
+    DOWNLOAD --> VALIDATE["perfcomparator validate-public"]
+    PRIVATE --> COMPARE["perfcomparator compare"]
+    VALIDATE --> COMPARE
+    COMPARE --> HTML["Rapport HTML local facultatif"]
+```
+
+Le catalogue contrôle le format et l'intégrité du rapport, pas l'identité de la
+machine ni l'exactitude des performances déclarées. Voir le
+[tutoriel de contribution et de comparaison](docs/tutoriel-catalogue.md) et le
+[contrat du format public](docs/format-rapport-public.md).
 
 ## Documentation
 
