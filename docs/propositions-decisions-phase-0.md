@@ -93,7 +93,7 @@ l’environnement `perfcomparator` : il retirera donc les deux paquets ensemble,
 ce qui correspond au parcours utilisateur installé comme une paire.
 
 Le premier commit PCWEB est épinglé actuellement dans les scripts directs
-macOS/Linux et Windows (`5bc8079682135b154872096bbee2aff506b49554`, version
+macOS/Linux et Windows (`6bb98c77a8c54b2471bb623e848bfaaf704733b7`, version
 `0.1.0`). Les archives d’installation prennent la référence SHA fournie au
 workflow et enregistrent aussi la version lue dans le `pyproject.toml` du
 commit. À chaque mise à jour de PCWEB destinée aux scripts directs, leur SHA

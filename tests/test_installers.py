@@ -59,7 +59,7 @@ def test_versions_are_consistent_across_package_and_installers() -> None:
     assert "perfcomparatorweb @ $web_source_url" in posix_installer
     assert '"perfcomparatorweb @ $webSourceUrl"' in windows_installer
     pcweb_source = (
-        "perfcomparator-web/archive/5bc8079682135b154872096bbee2aff506b49554.tar.gz"
+        "perfcomparator-web/archive/6bb98c77a8c54b2471bb623e848bfaaf704733b7.tar.gz"
     )
     assert pcweb_source in posix_installer
     assert pcweb_source in windows_installer

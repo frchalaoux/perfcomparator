@@ -58,6 +58,26 @@ def _request(url: str, token: str | None = None, *, post: bool = False) -> bytes
         return response.read()
 
 
+def _terminate_failed_start(process: subprocess.Popen[bytes]) -> None:
+    if process.poll() is not None:
+        return
+    try:
+        process.terminate()
+    except OSError:
+        pass
+    try:
+        process.wait(timeout=2)
+    except subprocess.TimeoutExpired:
+        process.kill()
+        process.wait(timeout=2)
+
+
+def _remove_state_for_process(pid: int) -> None:
+    state = read_state()
+    if state and state.get("pid") == pid:
+        STATE_FILE.unlink(missing_ok=True)
+
+
 def is_running() -> bool:
     state = read_state()
     if not state:
@@ -117,17 +137,22 @@ def start() -> dict[str, object]:
         "control_token": control_token,
         "log": str(log_path),
     }
-    _write_state(state)
-    for _ in range(100):
-        if process.poll() is not None:
-            raise RuntimeError(f"PCE s'est arrêté au démarrage. Consultez {log_path}.")
-        try:
-            payload = json.loads(_request(f"{url}/api/v1/health", api_token))
-            if payload.get("component") == "pce":
-                return state
-        except (OSError, urllib.error.URLError, ValueError):
-            time.sleep(0.1)
-    raise RuntimeError(f"PCE ne répond pas après 10 secondes. Consultez {log_path}.")
+    try:
+        _write_state(state)
+        for _ in range(100):
+            if process.poll() is not None:
+                raise RuntimeError(f"PCE s'est arrêté au démarrage. Consultez {log_path}.")
+            try:
+                payload = json.loads(_request(f"{url}/api/v1/health", api_token))
+                if payload.get("component") == "pce":
+                    return state
+            except (OSError, urllib.error.URLError, ValueError):
+                time.sleep(0.1)
+        raise RuntimeError(f"PCE ne répond pas après 10 secondes. Consultez {log_path}.")
+    except BaseException:
+        _terminate_failed_start(process)
+        _remove_state_for_process(process.pid)
+        raise
 
 
 def stop() -> bool:

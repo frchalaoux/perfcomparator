@@ -104,7 +104,7 @@ elseif ($PSScriptRoot -and (Test-Path -LiteralPath (Join-Path $PSScriptRoot "web
     (Get-Content -LiteralPath (Join-Path $PSScriptRoot "web-source-url.txt") -Raw).Trim()
 }
 else {
-    "https://github.com/frchalaoux/perfcomparator-web/archive/5bc8079682135b154872096bbee2aff506b49554.tar.gz"
+    "https://github.com/frchalaoux/perfcomparator-web/archive/6bb98c77a8c54b2471bb623e848bfaaf704733b7.tar.gz"
 }
 $webSourceVersion = if ($env:PERFCOMPARATOR_WEB_VERSION) {
     $env:PERFCOMPARATOR_WEB_VERSION
