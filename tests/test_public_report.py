@@ -4,8 +4,8 @@ import json
 import pytest
 from test_repository import sample_report
 
-from benchmark_mac.models import BenchmarkFailure, ProcessLoad, ReadinessSnapshot
-from benchmark_mac.public_report import (
+from perfcomparator.models import BenchmarkFailure, ProcessLoad, ReadinessSnapshot
+from perfcomparator.public_report import (
     export_public_report,
     load_public_report,
     public_report_to_benchmark_report,

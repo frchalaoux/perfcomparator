@@ -9,6 +9,7 @@ $originalPath = $env:PATH
 $originalTemp = $env:TEMP
 $originalTmp = $env:TMP
 $originalInstallLogDirectory = $env:PERFCOMPARATOR_INSTALL_LOG_DIR
+$originalWebSource = $env:PERFCOMPARATOR_WEB_SOURCE
 $testRoot = Join-Path ([IO.Path]::GetTempPath()) "perfcomparator-installer-test-$([guid]::NewGuid())"
 $fakeBin = Join-Path $testRoot "bin"
 $fakeToolDirectory = Join-Path $testRoot "tools"
@@ -21,6 +22,7 @@ $shortcutExisted = Test-Path -LiteralPath $shortcutPath
 try {
     New-Item -ItemType Directory -Path $fakeBin, $fakeToolDirectory, $fakeToolBin, $recoveryTemp -Force | Out-Null
     $env:PERFCOMPARATOR_INSTALL_LOG_DIR = Join-Path $testRoot "logs"
+    $env:PERFCOMPARATOR_WEB_SOURCE = "https://example.invalid/perfcomparatorweb.tar.gz"
     $env:TEMP = $recoveryTemp
     $env:TMP = $recoveryTemp
 
@@ -92,8 +94,11 @@ exit /b 9
     if ($toolListCallCount -ne 2) {
         throw "Expected two uv tool-list calls, including the empty-list case; found $toolListCallCount."
     }
-    if ($uvCalls -notmatch "tool install --managed-python --python 3\.14\.4 --force --reinstall") {
+    if ($uvCalls -notmatch "tool install --managed-python --python 3\.14\.4 --with-executables-from") {
         throw "The installer did not request the expected uv tool installation."
+    }
+    if ($uvCalls -notmatch "perfcomparatorweb @ https://example\.invalid/perfcomparatorweb\.tar\.gz") {
+        throw "The installer did not add the PCWEB package and executable to the shared tool environment."
     }
     if ($uvCalls -match "setup-contribution|desktop") {
         throw "The installer unexpectedly launched the application or contribution setup."
@@ -107,7 +112,7 @@ exit /b 9
     foreach ($expectedLogEntry in @(
         "Installer started.",
         "Starting: uv python install 3.14.4",
-        "Starting: uv tool install --managed-python --python 3.14.4 --force --reinstall",
+        "Starting: uv tool install --managed-python --python 3.14.4 --with-executables-from",
         "Exit code: 0 (uv)",
         "Creating shortcut",
         "Installer completed successfully."
@@ -128,6 +133,12 @@ finally {
     }
     else {
         $env:PERFCOMPARATOR_INSTALL_LOG_DIR = $originalInstallLogDirectory
+    }
+    if ($null -eq $originalWebSource) {
+        Remove-Item Env:PERFCOMPARATOR_WEB_SOURCE -ErrorAction SilentlyContinue
+    }
+    else {
+        $env:PERFCOMPARATOR_WEB_SOURCE = $originalWebSource
     }
     Remove-Item Env:FAKE_UV_TOOL_DIR -ErrorAction SilentlyContinue
     Remove-Item Env:FAKE_UV_BIN -ErrorAction SilentlyContinue

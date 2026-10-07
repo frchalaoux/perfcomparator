@@ -97,6 +97,24 @@ elseif ($PSScriptRoot -and (Test-Path -LiteralPath (Join-Path $PSScriptRoot "sou
 else {
     "https://github.com/frchalaoux/perfcomparator/archive/refs/tags/$releaseVersion.tar.gz"
 }
+$webSourceUrl = if ($env:PERFCOMPARATOR_WEB_SOURCE) {
+    $env:PERFCOMPARATOR_WEB_SOURCE
+}
+elseif ($PSScriptRoot -and (Test-Path -LiteralPath (Join-Path $PSScriptRoot "web-source-url.txt"))) {
+    (Get-Content -LiteralPath (Join-Path $PSScriptRoot "web-source-url.txt") -Raw).Trim()
+}
+else {
+    "https://github.com/frchalaoux/perfcomparator-web/archive/5bc8079682135b154872096bbee2aff506b49554.tar.gz"
+}
+$webSourceVersion = if ($env:PERFCOMPARATOR_WEB_VERSION) {
+    $env:PERFCOMPARATOR_WEB_VERSION
+}
+elseif ($PSScriptRoot -and (Test-Path -LiteralPath (Join-Path $PSScriptRoot "web-source-version.txt"))) {
+    (Get-Content -LiteralPath (Join-Path $PSScriptRoot "web-source-version.txt") -Raw).Trim()
+}
+else {
+    "0.1.0"
+}
 
 if ($PSScriptRoot -and (Test-Path (Join-Path $PSScriptRoot "pyproject.toml"))) {
     $sourceUrl = $PSScriptRoot
@@ -215,9 +233,17 @@ if ($legacyToolInstalled) {
     }
 }
 Write-Host "Installation de PerfComparator $releaseVersion..."
-$result = Invoke-LoggedNativeCommand -FilePath $uvCommand -ArgumentList @("tool", "install", "--managed-python", "--python", $pythonVersion, "--force", "--reinstall", $sourceUrl) -PassOutput
+$installArguments = @("tool", "install", "--managed-python", "--python", $pythonVersion)
+if ($webSourceUrl) {
+    $installArguments += @("--with-executables-from", "perfcomparatorweb @ $webSourceUrl")
+}
+$installArguments += @("--force", "--reinstall", $sourceUrl)
+$result = Invoke-LoggedNativeCommand -FilePath $uvCommand -ArgumentList $installArguments -PassOutput
 if ($result.ExitCode -ne 0) {
     throw "L'installation de PerfComparator a échoué (code $($result.ExitCode))."
+}
+if ($webSourceVersion) {
+    Write-Host "Version PCWEB installée : $webSourceVersion"
 }
 
 $result = Invoke-LoggedNativeCommand -FilePath $uvCommand -ArgumentList @("tool", "dir", "--bin")
@@ -261,7 +287,7 @@ try {
     $shortcutArguments = "desktop"
     if (Test-Path $pythonwPath) {
         $shortcutTarget = $pythonwPath
-        $shortcutArguments = "-m benchmark_mac.desktop_entry"
+        $shortcutArguments = "-m perfcomparator.desktop_entry"
     }
 
     Write-InstallLog "STEP" ("Creating shortcut at {0}; target={1}; arguments={2}" -f $shortcutPath, $shortcutTarget, $shortcutArguments)
@@ -285,7 +311,7 @@ catch {
 
 Write-Host "PerfComparator $releaseVersion est installé."
 if ($shortcutCreated) {
-    Write-Host "Pour lancer l'interface : utilisez le raccourci créé ou perfcomparator desktop"
+    Write-Host "Pour lancer l'interface Web : utilisez le raccourci créé ou perfcomparator web"
 }
 else {
     Write-Host "La ligne de commande reste disponible : perfcomparator --version"

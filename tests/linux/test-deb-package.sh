@@ -7,7 +7,10 @@ test_dir=$(mktemp -d)
 trap 'rm -rf "$test_dir"' EXIT HUP INT TERM
 
 output_dir="$test_dir/dist"
-bash "$repo_root/packaging/linux/build-deb.sh" "$release_tag" "$output_dir"
+test_pcweb_commit=0123456789abcdef0123456789abcdef01234567
+test_pcweb_version=0.1.0
+PERFCOMPARATOR_WEB_COMMIT="$test_pcweb_commit" PERFCOMPARATOR_WEB_VERSION="$test_pcweb_version" \
+    bash "$repo_root/packaging/linux/build-deb.sh" "$release_tag" "$output_dir"
 
 deb_file="$output_dir/PerfComparator-Ubuntu-Debian-amd64.deb"
 package_root="$test_dir/extracted"
@@ -32,6 +35,12 @@ expected_source_commit=$(git -C "$repo_root" rev-parse HEAD)
 [ "$(cat "$package_root/usr/lib/perfcomparator-installer/source-commit.txt")" = "$expected_source_commit" ]
 [ "$(cat "$package_root/usr/lib/perfcomparator-installer/source-url.txt")" = \
     "https://github.com/frchalaoux/perfcomparator/archive/$expected_source_commit.tar.gz" ]
+[ "$(cat "$package_root/usr/lib/perfcomparator-installer/web-source-commit.txt")" = \
+    "$test_pcweb_commit" ]
+[ "$(cat "$package_root/usr/lib/perfcomparator-installer/web-source-version.txt")" = \
+    "$test_pcweb_version" ]
+[ "$(cat "$package_root/usr/lib/perfcomparator-installer/web-source-url.txt")" = \
+    "https://github.com/frchalaoux/perfcomparator-web/archive/$test_pcweb_commit.tar.gz" ]
 
 sh -n "$package_root/usr/bin/perfcomparator-install"
 sh -n "$package_root/usr/bin/perfcomparator-uninstall"

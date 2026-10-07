@@ -1,7 +1,7 @@
 from datetime import UTC, datetime
 
-from benchmark_mac.models import BenchmarkReport, BenchmarkResult, SystemSnapshot
-from benchmark_mac.repository import JsonReportRepository
+from perfcomparator.models import BenchmarkReport, BenchmarkResult, SystemSnapshot
+from perfcomparator.repository import JsonReportRepository
 
 
 def sample_report(*, value: float = 10.0, label: str = "Mac test") -> BenchmarkReport:

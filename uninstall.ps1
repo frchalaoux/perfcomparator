@@ -47,6 +47,25 @@ if (-not $Yes) {
     }
 }
 
+$perfComparatorCommand = Join-Path $toolBinDirectory "perfcomparator.exe"
+$perfComparatorWebCommand = Join-Path $toolBinDirectory "perfcomparatorweb.exe"
+if ((Test-Path -LiteralPath $perfComparatorCommand) -and
+    (Test-Path -LiteralPath $perfComparatorWebCommand)) {
+    Write-Host "Arrêt de PCWEB et PCE avant la désinstallation..."
+    $previousErrorActionPreference = $ErrorActionPreference
+    try {
+        $ErrorActionPreference = "Continue"
+        & $perfComparatorCommand web stop 2>&1 | ForEach-Object { Write-Host $_ }
+        $stopExitCode = $LASTEXITCODE
+    }
+    finally {
+        $ErrorActionPreference = $previousErrorActionPreference
+    }
+    if ($stopExitCode -ne 0) {
+        throw "PCWEB et PCE n'ont pas pu être arrêtés ; PerfComparator n'a pas été désinstallé."
+    }
+}
+
 if ($toolList | Where-Object { $_ -match '^perfcomparator v' }) {
     Write-Host "Désinstallation de PerfComparator..."
     $previousErrorActionPreference = $ErrorActionPreference
@@ -66,7 +85,6 @@ else {
     Write-Host "PerfComparator n'est pas enregistré comme outil uv ; nettoyage du raccourci uniquement."
 }
 
-$perfComparatorCommand = Join-Path $toolBinDirectory "perfcomparator.exe"
 $pythonwPath = Join-Path $toolDirectory "perfcomparator\Scripts\pythonw.exe"
 $desktopPath = [Environment]::GetFolderPath("Desktop")
 $programsPath = [Environment]::GetFolderPath("Programs")
@@ -103,7 +121,7 @@ foreach ($directory in $shortcutDirectories) {
         )
         $isProductShortcut = (
             ($commandTargetMatches -and $shortcut.Arguments -eq "desktop") -or
-            ($pythonwTargetMatches -and $shortcut.Arguments -eq "-m benchmark_mac.desktop_entry")
+            ($pythonwTargetMatches -and $shortcut.Arguments -eq "-m perfcomparator.desktop_entry")
         )
         if ($isProductShortcut) {
             Remove-Item -LiteralPath $shortcutPath -Force

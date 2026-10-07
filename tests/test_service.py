@@ -1,11 +1,11 @@
 from test_repository import sample_report
 
-from benchmark_mac import BENCHMARK_PROTOCOL_VERSION
-from benchmark_mac import benchmarks as benchmark_module
-from benchmark_mac.benchmarks import BenchmarkDefinition
-from benchmark_mac.models import BenchmarkResult, EnvironmentSnapshot, ReadinessSnapshot
-from benchmark_mac.repository import JsonReportRepository
-from benchmark_mac.service import BenchmarkService, _environment_warnings
+from perfcomparator import BENCHMARK_PROTOCOL_VERSION
+from perfcomparator import benchmarks as benchmark_module
+from perfcomparator.benchmarks import BenchmarkDefinition
+from perfcomparator.models import BenchmarkResult, EnvironmentSnapshot, ReadinessSnapshot
+from perfcomparator.repository import JsonReportRepository
+from perfcomparator.service import BenchmarkService, _environment_warnings
 
 
 def test_service_aggregates_repetitions_with_the_median(tmp_path, monkeypatch) -> None:
@@ -27,7 +27,7 @@ def test_service_aggregates_repetitions_with_the_median(tmp_path, monkeypatch) -
     definition = BenchmarkDefinition("test.fake", "test", "Test", "Test", fake_runner)
     monkeypatch.setitem(benchmark_module.CATALOG, "test.fake", definition)
     monkeypatch.setattr(
-        "benchmark_mac.service.system_snapshot", lambda _path: sample_report().system
+        "perfcomparator.service.system_snapshot", lambda _path: sample_report().system
     )
 
     repository = JsonReportRepository(tmp_path / "results")

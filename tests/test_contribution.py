@@ -2,8 +2,8 @@ from pathlib import Path
 
 from test_public_report import exportable_report
 
-from benchmark_mac import contribution
-from benchmark_mac.public_report import export_public_report, save_public_report
+from perfcomparator import contribution
+from perfcomparator.public_report import export_public_report, save_public_report
 
 
 def test_catalog_owner_uses_the_main_repository_without_creating_a_fork(monkeypatch) -> None:

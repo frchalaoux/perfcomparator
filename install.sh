@@ -15,6 +15,17 @@ if [ -n "$script_dir" ] && [ -f "$script_dir/source-url.txt" ]; then
     IFS= read -r bundled_source_url < "$script_dir/source-url.txt"
 fi
 source_url="${PERFCOMPARATOR_SOURCE:-${BENCHMARK_MAC_SOURCE:-${bundled_source_url:-https://github.com/frchalaoux/perfcomparator/archive/refs/tags/${release_version}.tar.gz}}}"
+bundled_web_source_url=""
+if [ -n "$script_dir" ] && [ -f "$script_dir/web-source-url.txt" ]; then
+    IFS= read -r bundled_web_source_url < "$script_dir/web-source-url.txt"
+fi
+default_web_source_url="https://github.com/frchalaoux/perfcomparator-web/archive/5bc8079682135b154872096bbee2aff506b49554.tar.gz"
+web_source_url="${PERFCOMPARATOR_WEB_SOURCE:-${bundled_web_source_url:-$default_web_source_url}}"
+bundled_web_source_version=""
+if [ -n "$script_dir" ] && [ -f "$script_dir/web-source-version.txt" ]; then
+    IFS= read -r bundled_web_source_version < "$script_dir/web-source-version.txt"
+fi
+web_source_version="${PERFCOMPARATOR_WEB_VERSION:-${bundled_web_source_version:-0.1.0}}"
 
 if [ -n "$script_dir" ] && [ -f "$script_dir/pyproject.toml" ]; then
     source_url="$script_dir"
@@ -73,7 +84,16 @@ if [ "$legacy_tool_installed" = true ]; then
     "$uv_command" tool uninstall benchmark-mac
 fi
 echo "Installation de PerfComparator ${release_version}..."
-"$uv_command" tool install --managed-python --python "$python_version" --force --reinstall "$source_url"
+if [ -n "$web_source_url" ]; then
+    "$uv_command" tool install --managed-python --python "$python_version" \
+        --with-executables-from "perfcomparatorweb @ $web_source_url" \
+        --force --reinstall "$source_url"
+else
+    "$uv_command" tool install --managed-python --python "$python_version" --force --reinstall "$source_url"
+fi
+if [ -n "$web_source_version" ]; then
+    echo "Version PCWEB installée : ${web_source_version}"
+fi
 
 tool_bin_dir=$("$uv_command" tool dir --bin)
 perfcomparator_command="${tool_bin_dir}/perfcomparator"
@@ -134,9 +154,9 @@ if [ -x "$perfcomparator_command" ] && [ -t 1 ]; then
 else
     echo
     if command -v perfcomparator >/dev/null 2>&1; then
-        echo "PerfComparator est installé. Lancez : perfcomparator desktop"
+        echo "PerfComparator est installé. Lancez : perfcomparator web"
     else
-        echo "PerfComparator est installé. Fermez et rouvrez le terminal, puis lancez : perfcomparator desktop"
+        echo "PerfComparator est installé. Fermez et rouvrez le terminal, puis lancez : perfcomparator web"
     fi
 fi
 

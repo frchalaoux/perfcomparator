@@ -3,6 +3,9 @@
 from __future__ import annotations
 
 import json
+import subprocess
+import sys
+import webbrowser
 from pathlib import Path
 from typing import Annotated
 
@@ -29,6 +32,7 @@ from .github_cli import GITHUB_CLI_VERSION, github_cli_path, install_managed_git
 from .gpu_benchmarks import gpu_adapters, selected_gpu_adapter
 from .html_report import render_html
 from .models import BenchmarkFailure, BenchmarkResult, PublicBenchmarkReport, ReadinessSnapshot
+from .pce import process_manager as pce_process_manager
 from .public_report import (
     export_public_report,
     load_public_report,
@@ -42,6 +46,12 @@ from .system_info import machine_readiness, system_snapshot
 app = typer.Typer(
     no_args_is_help=True,
     help="Suite de benchmarks locale pour macOS, Windows et Linux.",
+)
+engine_app = typer.Typer(no_args_is_help=True, help="Gère le serveur PerfComparator Engine.")
+web_app = typer.Typer(
+    no_args_is_help=False,
+    invoke_without_command=True,
+    help="Gère les serveurs locaux PCE et PCWEB.",
 )
 
 
@@ -66,31 +76,140 @@ def main(
     """Suite de benchmarks locale pour macOS, Windows et Linux."""
 
 
+def _run_pcweb(command: str, *arguments: str) -> None:
+    try:
+        subprocess.run(
+            [sys.executable, "-m", "perfcomparatorweb.cli", command, *arguments],
+            check=True,
+        )
+    except (OSError, subprocess.CalledProcessError) as error:
+        raise RuntimeError(
+            "La commande PCWEB a échoué. Vérifiez que le paquet perfcomparatorweb est installé."
+        ) from error
+
+
+@engine_app.command("start")
+def engine_start() -> None:
+    """Démarre PCE seul."""
+    if not pce_process_manager.is_running() and pce_process_manager.web_is_running():
+        typer.secho(
+            "PCWEB tourne sans moteur joignable. Arrêtez la paire avec `perfcomparator web stop`, "
+            "puis redémarrez PCE.",
+            fg=typer.colors.YELLOW,
+            err=True,
+        )
+        raise typer.Exit(code=1)
+    try:
+        state = pce_process_manager.start()
+    except RuntimeError as error:
+        typer.secho(str(error), fg=typer.colors.RED, err=True)
+        raise typer.Exit(code=1) from error
+    typer.echo(f"PCE est disponible sur {state['url']} (PID {state['pid']}).")
+
+
+@engine_app.command("stop")
+def engine_stop() -> None:
+    """Arrête PCE s'il n'est pas utilisé par PCWEB."""
+    if pce_process_manager.web_is_running():
+        typer.secho(
+            "PCWEB est encore actif. Arrêtez les deux avec `perfcomparator web stop`.",
+            fg=typer.colors.YELLOW,
+            err=True,
+        )
+        raise typer.Exit(code=1)
+    try:
+        stopped = pce_process_manager.stop()
+    except RuntimeError as error:
+        typer.secho(str(error), fg=typer.colors.RED, err=True)
+        raise typer.Exit(code=1) from error
+    typer.echo("PCE est arrêté." if stopped else "PCE n'était pas démarré.")
+
+
+@engine_app.command("status")
+def engine_status() -> None:
+    """Affiche l'état de PCE."""
+    state = pce_process_manager.read_state()
+    if state and pce_process_manager.is_running():
+        typer.echo(f"PCE fonctionne sur {state['url']} (PID {state['pid']}).")
+    else:
+        typer.echo("PCE est arrêté.")
+
+
+def _start_web_pair(no_open_browser: bool = False) -> None:
+    was_running = pce_process_manager.is_running()
+    try:
+        if not was_running and pce_process_manager.web_is_running():
+            _run_pcweb("stop")
+        pce_process_manager.start()
+        _run_pcweb("start", "--no-open-browser")
+    except RuntimeError as error:
+        if not was_running:
+            pce_process_manager.stop()
+        typer.secho(str(error), fg=typer.colors.RED, err=True)
+        raise typer.Exit(code=1) from error
+    try:
+        web_state = json.loads(
+            (pce_process_manager.STATE_DIR / "web.json").read_text(encoding="utf-8")
+        )
+    except (OSError, json.JSONDecodeError):
+        typer.secho("PCWEB a démarré mais son état est introuvable.", fg=typer.colors.RED, err=True)
+        raise typer.Exit(code=1)
+    typer.echo(f"Interface PerfComparator : {web_state['url']}")
+    if not no_open_browser:
+        webbrowser.open(str(web_state["url"]))
+
+
+@web_app.callback()
+def web_callback(
+    ctx: typer.Context,
+    no_open_browser: bool = typer.Option(False, "--no-open-browser"),
+) -> None:
+    if ctx.invoked_subcommand is None:
+        _start_web_pair(no_open_browser)
+
+
+@web_app.command("start")
+def web_start(no_open_browser: bool = typer.Option(False, "--no-open-browser")) -> None:
+    """Démarre PCE et PCWEB."""
+    _start_web_pair(no_open_browser)
+
+
+@web_app.command("stop")
+def web_stop() -> None:
+    """Arrête PCWEB puis PCE."""
+    try:
+        _run_pcweb("stop")
+        pce_process_manager.stop()
+    except RuntimeError as error:
+        typer.secho(str(error), fg=typer.colors.RED, err=True)
+        raise typer.Exit(code=1) from error
+    typer.echo("PCWEB et PCE sont arrêtés.")
+
+
+@web_app.command("status")
+def web_status() -> None:
+    """Affiche l'état de PCE et PCWEB."""
+    engine_state = pce_process_manager.read_state()
+    engine_up = pce_process_manager.is_running()
+    typer.echo(
+        f"PCE : {'actif' if engine_up else 'arrêté'}"
+        + (f" ({engine_state['url']})" if engine_up and engine_state else "")
+    )
+    try:
+        _run_pcweb("status")
+    except RuntimeError as error:
+        typer.secho(str(error), fg=typer.colors.RED, err=True)
+        raise typer.Exit(code=1) from error
+
+
+app.add_typer(engine_app, name="engine")
+app.add_typer(web_app, name="web")
+
+
 @app.command("desktop")
 def desktop() -> None:
-    """Ouvre l'interface graphique de lancement des benchmarks."""
-    try:
-        from .desktop import launch
-
-        launch()
-    except ModuleNotFoundError as error:
-        if error.name in {"_tkinter", "tkinter"}:
-            typer.secho(
-                "Tk n'est pas installé pour ce Python. Avec Python Homebrew 3.14, "
-                "installez-le avec : brew install python-tk@3.14",
-                fg=typer.colors.RED,
-                err=True,
-            )
-            raise typer.Exit(code=1) from error
-        typer.secho(
-            f"Impossible d'ouvrir l'interface graphique : {error}", fg=typer.colors.RED, err=True
-        )
-        raise typer.Exit(code=1) from error
-    except Exception as error:
-        typer.secho(
-            f"Impossible d'ouvrir l'interface graphique : {error}", fg=typer.colors.RED, err=True
-        )
-        raise typer.Exit(code=1) from error
+    """Alias historique vers le démarrage de l'interface Web locale."""
+    _start_web_pair()
 
 
 def service(root: Path = Path("data/results")) -> BenchmarkService:

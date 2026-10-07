@@ -6,6 +6,16 @@ release_tag=${1:?Usage: build-deb.sh RELEASE_TAG [OUTPUT_DIR]}
 output_dir=${2:-dist}
 repo_root=$(CDPATH= cd -- "$(dirname -- "$0")/../.." && pwd)
 source_commit=$(git -C "$repo_root" rev-parse HEAD)
+pcweb_commit=${PERFCOMPARATOR_WEB_COMMIT:-}
+pcweb_version=${PERFCOMPARATOR_WEB_VERSION:-}
+if ! printf '%s' "$pcweb_commit" | grep -Eq '^[0-9a-f]{40}$'; then
+    echo "Error: PERFCOMPARATOR_WEB_COMMIT must be a full 40-character lowercase commit SHA." >&2
+    exit 1
+fi
+if ! printf '%s' "$pcweb_version" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+([.]dev[0-9]+)?$'; then
+    echo "Error: PERFCOMPARATOR_WEB_VERSION must be a package version like 0.1.0." >&2
+    exit 1
+fi
 
 if ! printf '%s\n' "$release_tag" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+(\.dev[0-9]+)?$'; then
     echo "Error: expected a release tag like v1.2.3 or v1.2.3.dev0." >&2
@@ -56,6 +66,12 @@ printf '%s\n' "$source_commit" \
     > "$package_root/usr/lib/perfcomparator-installer/source-commit.txt"
 printf 'https://github.com/frchalaoux/perfcomparator/archive/%s.tar.gz\n' "$source_commit" \
     > "$package_root/usr/lib/perfcomparator-installer/source-url.txt"
+printf '%s\n' "$pcweb_commit" \
+    > "$package_root/usr/lib/perfcomparator-installer/web-source-commit.txt"
+printf '%s\n' "$pcweb_version" \
+    > "$package_root/usr/lib/perfcomparator-installer/web-source-version.txt"
+printf 'https://github.com/frchalaoux/perfcomparator-web/archive/%s.tar.gz\n' "$pcweb_commit" \
+    > "$package_root/usr/lib/perfcomparator-installer/web-source-url.txt"
 printf '%s\n' "$release_tag" \
     > "$package_root/usr/lib/perfcomparator-installer/release-version.txt"
 chmod 755 \
@@ -69,6 +85,9 @@ chmod 644 \
     "$package_root/usr/share/applications/perfcomparator-installer.desktop" \
     "$package_root/usr/lib/perfcomparator-installer/source-commit.txt" \
     "$package_root/usr/lib/perfcomparator-installer/source-url.txt" \
+    "$package_root/usr/lib/perfcomparator-installer/web-source-commit.txt" \
+    "$package_root/usr/lib/perfcomparator-installer/web-source-version.txt" \
+    "$package_root/usr/lib/perfcomparator-installer/web-source-url.txt" \
     "$package_root/usr/lib/perfcomparator-installer/release-version.txt"
 
 dpkg-deb --root-owner-group --build \

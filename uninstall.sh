@@ -45,6 +45,13 @@ if [ "$assume_yes" != true ]; then
     esac
 fi
 
+perfcomparator_command="$tool_bin_dir/perfcomparator"
+perfcomparatorweb_command="$tool_bin_dir/perfcomparatorweb"
+if [ -x "$perfcomparator_command" ] && [ -x "$perfcomparatorweb_command" ]; then
+    echo "Arrêt de PCWEB et PCE avant la désinstallation..."
+    "$perfcomparator_command" web stop
+fi
+
 if printf '%s\n' "$tool_list" | grep -Eq '^perfcomparator v'; then
     echo "Désinstallation de PerfComparator..."
     "$uv_command" tool uninstall perfcomparator

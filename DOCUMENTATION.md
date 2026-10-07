@@ -39,6 +39,16 @@ instructions propres à chaque version.
 
 - [Guide développeur](docs/guide-developpeur.md) : architecture, validations
   locales (`ruff`, `pytest`, construction du paquet) et ajout d'un benchmark.
+- [Référence d’architecture PerfComparator, SMB et SMB-WEB](docs/architecture-perfcomparator-smb-reference.md) : état du code, motifs réutilisables, topologies à deux composants et décisions à prendre.
+- [Plan d’évolution de l’interface Web](docs/plan-evolution-interface-web.md) :
+  architecture locale et serveur, sécurité, stockage, API et phases de
+  réalisation.
+- [Détail des phases 1 et 2](docs/plan-phases-1-2.md) : parcours locaux
+  read-only, campagnes, tâches, progression, critères de sortie et décisions à
+  verrouiller avant le développement.
+- [Propositions de décisions — phase 0](docs/propositions-decisions-phase-0.md) :
+  recommandations sur les processus, dépôts, paquets, contrats HTTP, tâches,
+  sécurité locale et sujets reportés.
 - [Stratégie de publication](docs/strategie-publication.md) : construction,
   contrôles des artefacts, essais sur les systèmes cibles et promotion en
   Release des mêmes fichiers testés, avec schémas Mermaid.

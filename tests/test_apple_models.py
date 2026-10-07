@@ -1,4 +1,4 @@
-from benchmark_mac.apple_models import apple_model_year
+from perfcomparator.apple_models import apple_model_year
 
 
 def test_known_apple_model_identifier_has_commercial_year() -> None:
