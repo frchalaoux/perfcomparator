@@ -1,7 +1,15 @@
 # PerfComparator
 
 **Mesurez et comparez les performances de vos machines, avec les mêmes
-scénarios sur macOS, Windows et Linux.** PerfComparator fonctionne localement,
+scénarios sur macOS, Windows et Linux.**
+
+PerfComparator permet de mesurer une machine selon une charge de travail et une
+configuration données, puis de comparer les résultats entre plusieurs
+machines. On peut aussi suivre l'évolution d'une même machine dans le temps ou
+comparer différents systèmes installés dessus. Chaque campagne produit un
+rapport JSON conservé localement.
+
+PerfComparator fonctionne localement,
 en interface graphique ou en ligne de commande, et conserve les résultats dans
 des rapports JSON que vous pouvez comparer ou partager.
 
