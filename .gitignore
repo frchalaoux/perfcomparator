@@ -10,3 +10,7 @@ dist/
 data/results/*.json
 data/results/comparaison*.html
 data/public/*.json
+# Generated PDFs from publication-strategy Markdown sources.
+/docs/strategie-annexe.pdf
+/docs/strategie-publication-assemblee.pdf
+/docs/strategie-publication.pdf
