@@ -64,9 +64,9 @@ uv build
 ```
 
 Pour préparer et tester les installateurs avant une publication, suivre la
-[stratégie de publication](strategie-publication.md). Elle décrit le parcours
-cible des artefacts Actions, les essais en VM et leur promotion en Release sans
-reconstruction.
+[stratégie de publication](strategie-publication.md). Elle décrit les contrôles
+des artefacts Actions, les essais manuels sur les systèmes cibles et la
+promotion en Release des mêmes fichiers testés, sans reconstruction.
 
 Pour produire un PDF mêlant texte et diagrammes Mermaid avec une orientation de
 page adaptée à chaque diagramme, suivre le

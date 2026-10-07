@@ -1,5 +1,22 @@
 # Versions disponibles et installation
 
+Les installateurs graphiques sont recommandés pour un poste de travail ; les
+installateurs shell et PowerShell conviennent aussi à la ligne de commande et
+aux serveurs.
+
+## Versions publiées
+
+| Version | Canal | À choisir pour | État |
+| --- | --- | --- | --- |
+| [`v0.5.0`](https://github.com/frchalaoux/perfcomparator/tree/v0.5.0) | Stable | Interface graphique, affichage de la version et export PDF | Version recommandée |
+| [`v0.5.0.dev0`](https://github.com/frchalaoux/perfcomparator/tree/v0.5.0.dev0) | Préversion | Tester les installateurs graphiques et lanceurs par système | Préversion publiée |
+| [`v0.4.0`](https://github.com/frchalaoux/perfcomparator/tree/v0.4.0) | Stable antérieure | Utiliser l'année du modèle Apple et contribuer au catalogue | Remplacée par `v0.5.0` |
+
+Les versions plus anciennes restent documentées ci-dessous pour reproduire des
+installations et campagnes passées. Les
+[tags GitHub](https://github.com/frchalaoux/perfcomparator/tags) sont la liste
+complète de référence.
+
 ## Version stable `v0.5.0`
 
 [Consulter le code source de `v0.5.0`](https://github.com/frchalaoux/perfcomparator/tree/v0.5.0) ·
@@ -145,7 +162,8 @@ modèle sur macOS, Windows et Linux. Le parcours de contribution demande de
 confirmer ou corriger le nom commercial public avant l'export. Le format public
 v2 expose cette identité non unique, mais jamais le numéro de série, les UUID
 matériels ni le nom d'hôte. Les rapports publics v1 restent acceptés. Le
-protocole de mesure reste `0.3.0` et la stable recommandée reste `v0.3.2`.
+le protocole de mesure reste `0.3.0` ; à la sortie de cette préversion,
+`v0.3.2` était la stable recommandée.
 
 Commandes d'installation :
 
@@ -168,7 +186,7 @@ Cette préversion accepte les rapports privés de schéma `3` ou `4` lorsque leu
 protocole est `0.3.0`. Elle décrit aussi sans ambiguïté la création de la pull
 request, sa validation et sa fusion automatiques, le déploiement du catalogue,
 le téléchargement et la comparaison locale. Le protocole de mesure reste
-`0.3.0` et la stable recommandée reste `v0.3.2`.
+`0.3.0` ; à la sortie de cette préversion, `v0.3.2` était la stable recommandée.
 
 Commandes d'installation :
 
@@ -192,7 +210,8 @@ choisit un rapport, construit et affiche son export public, prépare une version
 officielle épinglée de GitHub CLI, puis crée le fork, la branche et la pull
 request par l'API GitHub après une confirmation distante explicite. Git n'est
 pas requis. `--dry-run` réalise tout le contrôle local sans connexion GitHub.
-Le protocole de mesure reste `0.3.0` et la stable recommandée reste `v0.3.2`.
+Le protocole de mesure reste `0.3.0` ; à la sortie de cette préversion,
+`v0.3.2` était la stable recommandée.
 
 Commandes d'installation :
 
@@ -214,8 +233,8 @@ Le contrôle `perfcomparator --version` devra afficher
 Cette préversion ajoute l'export public par liste blanche, la validation locale
 du format communautaire et la comparaison directe des rapports publics
 téléchargés. Le tutoriel accompagne la mesure, la contribution au catalogue et
-la comparaison de bout en bout. Le protocole de mesure reste `0.3.0` et la
-stable recommandée reste `v0.3.2`.
+la comparaison de bout en bout. Le protocole de mesure reste `0.3.0` ; à la
+sortie de cette préversion, `v0.3.2` était la stable recommandée.
 
 Commandes d'installation :
 
@@ -237,8 +256,8 @@ Le contrôle `perfcomparator --version` devra afficher
 Cette préversion réalise le changement de nom vers **PerfComparator** sans
 modifier le protocole de mesure `0.3.0`. Le paquet devient `perfcomparator` et
 la commande principale devient `perfcomparator`; `benchmark-mac` reste un alias
-de compatibilité. La stable recommandée reste `v0.3.2`. Lors d'une mise à
-niveau, l'installateur retire l'ancien
+de compatibilité. À la sortie de cette préversion, `v0.3.2` était la stable
+recommandée. Lors d'une mise à niveau, l'installateur retire l'ancien
 enregistrement `uv`, puis installe PerfComparator avec l'alias historique.
 
 Commandes d'installation :
