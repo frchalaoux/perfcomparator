@@ -1,8 +1,9 @@
 # Installer PerfComparator
 
 Ce guide décrit l'installation de PerfComparator sous macOS, Windows et Linux.
-L'interface graphique est le parcours principal ; la ligne de commande reste
-disponible comme option, y compris sur un serveur sans environnement graphique.
+L'interface Web locale et la ligne de commande sont disponibles après
+l'installation ; les campagnes restent utilisables sur un serveur sans
+navigateur ni environnement graphique.
 Téléchargez les installateurs depuis la
 [page officielle de téléchargement](https://frchalaoux.github.io/perfcomparator/)
 ou depuis la [liste des releases GitHub](https://github.com/frchalaoux/perfcomparator/releases).
@@ -11,25 +12,28 @@ elle peut donc proposer une préversion si la version stable n'a pas encore ces
 fichiers.
 
 Les archives d'installation contiennent le lanceur du système concerné. Celui-ci
-installe `uv`, CPython 3.14.4 géré par `uv` avec Tk, puis PerfComparator dans le
-compte de l'utilisateur. Python n'a pas besoin d'être installé séparément. Une
-connexion Internet est nécessaire. Les versions prises en charge et leur état
-(stable ou préversion) figurent dans la
+installe `uv`, CPython 3.14.4 géré par `uv`, puis PCE et PCWEB dans le compte de
+l'utilisateur. Python n'a pas besoin d'être installé séparément. Une connexion
+Internet est nécessaire. Les versions prises en charge et leur état (stable ou
+préversion) figurent dans la
 [page des versions](versions.md).
 Les étapes de retrait de l'application sont dans le
 [guide de désinstallation](desinstallation.md).
 
-L'interface ne s'ouvre pas automatiquement à la fin de l'installation : utilisez
-l'icône ou le raccourci créé par l'installateur.
+L'interface Web ne s'ouvre pas automatiquement à la fin de l'installation :
+utilisez l'icône ou le raccourci créé par l'installateur. Il démarre les deux
+serveurs locaux et ouvre l'interface dans le navigateur.
 
 ## Option : ligne de commande et serveurs sans interface graphique
 
 La commande `perfcomparator` est installée avec l'application, quel que soit le
 parcours choisi. Elle ne nécessite ni bureau graphique ni écran pour les
 commandes de diagnostic, de liste et les benchmarks CPU, mémoire ou stockage.
-Seule la commande `perfcomparator desktop` ouvre l'interface Tk et nécessite une
-session graphique. Sur macOS et Linux, lancez ces commandes depuis Terminal ;
-sous Windows, depuis PowerShell ou l'invite de commandes.
+`perfcomparator web` démarre PCE et PCWEB, puis ouvre l'interface Web dans le
+navigateur. Cette commande et le raccourci graphique nécessitent un navigateur
+et une session utilisateur interactive. Sur macOS et Linux, lancez les
+commandes depuis Terminal ; sous Windows, depuis PowerShell ou l'invite de
+commandes.
 
 ### macOS sans session graphique (serveur ou SSH)
 
@@ -52,9 +56,9 @@ perfcomparator history
 ```
 
 Les rapports sont écrits dans `data/results` sous le répertoire courant.
-Choisissez un emplacement persistant accessible en écriture. Les commandes
-`perfcomparator desktop` et l'application `.app` nécessitent une session
-graphique ; elles ne sont pas nécessaires aux mesures lancées en SSH.
+Choisissez un emplacement persistant accessible en écriture. Le démarrage de
+l'interface Web nécessite une session interactive ; il n'est pas nécessaire
+pour les mesures lancées en SSH.
 
 ### Windows Server Core
 
@@ -80,8 +84,9 @@ perfcomparator history
 
 Les rapports sont enregistrés dans `data/results` sous le répertoire courant.
 Choisissez un répertoire persistant et accessible en écriture avant de lancer
-la campagne. N'exécutez pas `perfcomparator desktop` sur Server Core : cette
-commande requiert une session graphique. Microsoft décrit les différences entre
+la campagne. N'exécutez pas `perfcomparator web` sur Server Core : cette
+commande ouvre l'interface dans un navigateur et demande une session
+interactive. Microsoft décrit les différences entre
 [Server Core et Desktop Experience](https://learn.microsoft.com/en-us/windows-server/administration/server-core/what-is-server-core).
 
 ### Linux sans interface graphique (serveur SSH)
@@ -93,11 +98,11 @@ droits administrateur :
 curl -LsSf https://raw.githubusercontent.com/frchalaoux/perfcomparator/v0.5.0/install.sh | sh
 ```
 
-L'installateur prépare `uv`, CPython 3.14.4 avec Tk et PerfComparator. Tk est
-installé pour conserver le même environnement que sur les postes graphiques ;
-il n'est pas nécessaire d'ouvrir l'interface ni de disposer d'un serveur
-d'affichage pour utiliser la CLI. La commande `desktop` est à réserver aux
-sessions graphiques.
+L'installateur prépare `uv`, CPython 3.14.4, PCE et PCWEB. Aucun serveur
+d'affichage n'est nécessaire pour utiliser la CLI et lancer des campagnes. Pour
+ouvrir l'interface Web, utilisez `perfcomparator web` depuis une session
+disposant d'un navigateur ; les deux serveurs écoutent uniquement sur la machine
+locale.
 
 Exemple de vérification et de campagne CPU légère :
 
@@ -187,8 +192,8 @@ contient effectivement le paquet.
 1. Téléchargez `PerfComparator-Ubuntu-Debian-amd64.deb` et ouvrez-le dans
    l'App Center / l'installateur de paquets.
 2. Confirmez l'installation du paquet. Cette confirmation système sert à
-   installer le lanceur dans le menu des applications ; `uv`, Python/Tk et
-   PerfComparator sont ensuite installés dans votre compte, sans exécuter leur
+   installer le lanceur dans le menu des applications ; `uv`, Python, PCE et
+   PCWEB sont ensuite installés dans votre compte, sans exécuter leur
    installation en administrateur.
 3. Dans le menu des applications, ouvrez **Installer PerfComparator**. Une
    fenêtre de terminal affiche la progression ; attendez le message de fin.
@@ -217,7 +222,7 @@ ou si la release ne propose pas encore cette option.
 4. Une fois l'installation terminée, ouvrez **PerfComparator** dans le menu des
    applications ou sur le Bureau.
 
-L'interface Linux nécessite une session graphique capable d'afficher Tk. Sur
+L'interface Web Linux nécessite une session disposant d'un navigateur. Sur
 Ubuntu/Debian, préférez le paquet `.deb` quand il est disponible ; l'archive
 reste le choix générique pour les autres distributions.
 
@@ -226,10 +231,10 @@ reste le choix générique pour les autres distributions.
 Après installation, la commande `perfcomparator --version` doit afficher la
 version installée. Si le terminal ne trouve pas la commande immédiatement,
 fermez-le puis ouvrez-en un nouveau. Pour démarrer l'interface depuis un
-terminal :
+terminal (le navigateur s'ouvre automatiquement) :
 
 ```sh
-perfcomparator desktop
+perfcomparator web
 ```
 
 ## Aide au dépannage
