@@ -2,7 +2,7 @@ import urllib.error
 
 import pytest
 
-from perfcomparator.pce import process_manager
+from perfcomparator.core import process_manager
 
 
 class _FakeProcess:

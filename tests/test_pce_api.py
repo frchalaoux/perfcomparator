@@ -1,7 +1,7 @@
 from fastapi.testclient import TestClient
 
-from perfcomparator.pce.app import create_app
-from perfcomparator.pce.config import Settings
+from perfcomparator.app import create_app
+from perfcomparator.core.config import Settings
 
 
 def test_engine_health_requires_the_local_api_token() -> None:

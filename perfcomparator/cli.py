@@ -28,11 +28,11 @@ from .comparison import (
     parse_scenario_weights,
 )
 from .contribution import github_login, submit_public_report
+from .core import process_manager as pce_process_manager
 from .github_cli import GITHUB_CLI_VERSION, github_cli_path, install_managed_github_cli
 from .gpu_benchmarks import gpu_adapters, selected_gpu_adapter
 from .html_report import render_html
 from .models import BenchmarkFailure, BenchmarkResult, PublicBenchmarkReport, ReadinessSnapshot
-from .pce import process_manager as pce_process_manager
 from .public_report import (
     export_public_report,
     load_public_report,

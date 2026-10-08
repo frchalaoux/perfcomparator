@@ -84,6 +84,15 @@ ses contrats par HTTP et ne réimplémente pas ces fonctions. Le paquet racine
 comme `SMB/sizemybike/`. Le paquet racine `perfcomparatorweb/` reprend
 `SMB-WEB/sizemybikeweb/`.
 
+Le socle PCE place maintenant la fabrique dans `perfcomparator/app.py`, les
+routes dans `perfcomparator/apis/`, la configuration et le gestionnaire de
+processus dans `perfcomparator/core/`, et l’entrée Uvicorn dans
+`perfcomparator/server.py`. Le dossier d’empaquetage `src/` n’est pas utilisé.
+Les modules historiques de benchmarks restent au niveau racine car CLI, bureau
+et PCE partagent le même moteur ; l’ajout des campagnes devra introduire les
+frontières `business`, `schemas`, `services` et `repositories` pour les nouveaux
+contrats et l’orchestration, sans dupliquer ce moteur.
+
 Le dépôt `perfcomparator-results` ne change que lorsqu’une évolution du contrat
 public, du catalogue ou du parcours de contribution l’exige. Le contrat
 OpenAPI PCE sera la référence de compatibilité du client PCWEB.

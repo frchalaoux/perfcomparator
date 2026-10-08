@@ -7,7 +7,7 @@ import asyncio
 import uvicorn
 
 from .app import create_app
-from .config import Settings
+from .core.config import Settings
 
 
 async def serve() -> None:

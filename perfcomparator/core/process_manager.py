@@ -124,7 +124,7 @@ def start() -> dict[str, object]:
         else:
             kwargs["start_new_session"] = True
         process = subprocess.Popen(
-            [sys.executable, "-m", "perfcomparator.pce.server"],
+            [sys.executable, "-m", "perfcomparator.server"],
             stdin=subprocess.DEVNULL,
             env=env,
             close_fds=True,
