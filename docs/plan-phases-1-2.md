@@ -4,9 +4,9 @@
 
 Ce document précise les deux premiers incréments du
 [plan d’évolution](plan-evolution-interface-web.md). Il transforme leurs
-livrables généraux en parcours, responsabilités et contrats vérifiables. Il
-reste une spécification de travail : les routes, modèles et écrans indiqués
-seront confirmés en phase 0 avant leur implémentation.
+livrables généraux en parcours, responsabilités et contrats vérifiables. Les
+choix de phase 0 sont confirmés ; le contrat HTTP de phase 1 ci-dessous sert
+de référence à l’OpenAPI PCE et aux DTO validés par PCWEB.
 
 Le périmètre reste local : PCWEB sert le navigateur, appelle PCE sur la boucle
 locale et PCE exécute ses opérations sur la machine mesurée. La phase 1 est
@@ -63,7 +63,7 @@ Python ne sont pas affichés par défaut.
 | Retourne le catalogue, les groupes, profils et descriptions issus du cœur. | Filtre et présente le catalogue sans réimplémenter ses définitions. |
 | Liste les rapports archivés et expose les détails par ID opaque. | Présente l’historique et demande les détails via son repository HTTP. |
 | Résout l’ID vers son archive dans le dépôt JSON. | N’accepte ni ne construit un chemin de rapport. |
-| Fournit `/health` sans données privées. | Vérifie la disponibilité PCE au démarrage et traduit ses erreurs. |
+| Fournit `/health` sans données privées. | Vérifie PCE lors des lectures et traduit ses erreurs en messages actionnables. |
 
 La détection matérielle peut dépendre de commandes système ou de pilotes
 absents. Une valeur inconnue est présentée comme indisponible, sans faire
@@ -71,23 +71,25 @@ absents. Une valeur inconnue est présentée comme indisponible, sans faire
 actionnable et une nouvelle tentative ; PCWEB ne bascule pas silencieusement
 vers une autre source.
 
-### Contrat HTTP indicatif
+### Contrat HTTP de phase 1
 
-Ces routes sont des propositions de découpage, pas encore un contrat figé :
+PCE publie le contrat dans son document OpenAPI. PCWEB valide les réponses
+avec ses propres modèles avant de les présenter.
 
 | PCE | Réponse attendue | Notes |
 | --- | --- | --- |
-| `GET /health` | état prêt/version de service | Sans inventaire matériel ni chemin privé. |
-| `GET /api/v1/system` | `SystemSnapshot` et capacités | Pas de lancement de benchmark. |
-| `GET /api/v1/benchmarks` | définitions, groupes et profils | Dérivé de `CATALOG`, `GROUPS`, `PROFILES`. |
-| `GET /api/v1/benchmarks/{benchmark_id}` | description et limites | ID inconnu : erreur stable `404`. |
-| `GET /api/v1/reports` | page de métadonnées et IDs | Ordre récent d’abord ; pagination bornée. |
-| `GET /api/v1/reports/{report_id}` | détails validés du rapport | `404` si absent/illisible ; aucun chemin fourni par le client. |
+| `GET /health` | disponibilité locale de PCE | Sans inventaire matériel ni chemin privé. |
+| `GET /api/v1/health` | état prêt, composant et version API | Authentification Bearer requise. |
+| `GET /api/v1/system` | inventaire système filtré et capacités GPU | Le chemin de l’exécutable Python est exclu ; aucune mesure n’est lancée. |
+| `GET /api/v1/benchmarks` | définitions, groupes et profils complets | Dérivé de `CATALOG`, `GROUPS` et `PROFILES`. |
+| `GET /api/v1/benchmarks/{benchmark_id}` | description, méthode, limites, unité et références | ID inconnu : erreur stable `404`. |
+| `GET /api/v1/reports` | page de métadonnées et IDs opaques | Ordre récent d’abord ; `limit` borné de 1 à 100 ; avertissement si des archives invalides sont ignorées. |
+| `GET /api/v1/reports/{report_id}` | détails filtrés du rapport | ID SHA-256 opaque ; `404` si absent/illisible ; aucun chemin fourni par le client. |
 
-Les erreurs partagent une enveloppe stable avec code, message lisible et ID de
-requête ; elles ne révèlent ni traceback ni secrets. Les lectures de rapports
-ignorent ou signalent les JSON invalides selon une règle homogène et
-observable, sans les supprimer ni les corriger automatiquement.
+Les erreurs utilisent l’enveloppe `{ "error": { "code", "message",
+"request_id" } }` et l’en-tête `X-Request-ID`. Elles ne révèlent ni traceback
+ni secrets. Les archives JSON invalides sont ignorées dans la liste et
+signalées par un avertissement ; elles ne sont ni supprimées ni corrigées.
 
 ### Interface et accessibilité
 
