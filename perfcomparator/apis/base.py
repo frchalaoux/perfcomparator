@@ -4,6 +4,7 @@ from fastapi import APIRouter
 
 from .control import router as control_router
 from .v1.health import router as health_router
+from .v1.resources import router as resources_router
 
 api_router = APIRouter()
 
@@ -14,4 +15,5 @@ async def health() -> dict[str, str]:
 
 
 api_router.include_router(health_router, prefix="/api/v1", tags=["health"])
+api_router.include_router(resources_router, prefix="/api/v1", tags=["read-only"])
 api_router.include_router(control_router)

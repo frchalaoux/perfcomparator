@@ -84,6 +84,7 @@ class BenchmarkDocumentation:
     methodology: str
     limitations: str
     reference_ids: tuple[str, ...]
+    unit: str
 
 
 BENCHMARK_DOCUMENTATION = {
@@ -93,6 +94,7 @@ BENCHMARK_DOCUMENTATION = {
         "Mesure surtout l'interpréteur CPython et les entiers Python ; ce n'est pas un test de "
         "qualité du générateur pseudo-aléatoire.",
         ("numerical-recipes", "pep-418"),
+        "Mop/s",
     ),
     "cpu.float": BenchmarkDocumentation(
         "Boucle mono-processus appliquant sin et sqrt à des nombres en double précision. Le "
@@ -100,6 +102,7 @@ BENCHMARK_DOCUMENTATION = {
         "Inclut le coût des appels Python et de la bibliothèque mathématique du système ; les "
         "résultats ne représentent pas les FLOPS vectoriels maximaux.",
         ("ieee-754", "pep-418"),
+        "Mop/s",
     ),
     "cpu.hash": BenchmarkDocumentation(
         "Hachage SHA-256 répété d'un bloc déterministe de 1 Mio ; le score est le débit des "
@@ -107,6 +110,7 @@ BENCHMARK_DOCUMENTATION = {
         "Peut utiliser une implémentation native ou des instructions matérielles ; le score "
         "caractérise l'ensemble CPython et bibliothèque cryptographique.",
         ("nist-sha", "pep-418"),
+        "Mio/s",
     ),
     "cpu.compression": BenchmarkDocumentation(
         "Compression zlib niveau 6 répétée d'un bloc pseudo-aléatoire déterministe de 1 Mio ; "
@@ -114,6 +118,7 @@ BENCHMARK_DOCUMENTATION = {
         "Le bloc est peu compressible et ne représente pas tous les fichiers réels ; le débit "
         "dépend de la version native de zlib.",
         ("rfc-zlib", "rfc-deflate", "pep-418"),
+        "Mio/s",
     ),
     "cpu.multicore": BenchmarkDocumentation(
         "La charge entière de cpu.integer est exécutée simultanément dans autant de processus "
@@ -121,6 +126,7 @@ BENCHMARK_DOCUMENTATION = {
         "Le nombre de processeurs logiques n'est pas le nombre de cœurs physiques. La montée en "
         "charge dépend de l'ordonnanceur, du refroidissement et des coûts interprocessus.",
         ("amdahl", "python-processes", "pep-418"),
+        "Mop/s",
     ),
     "memory.copy": BenchmarkDocumentation(
         "Copie répétée d'un tampon déterministe vers un tampon préalloué de même taille. Un "
@@ -128,6 +134,7 @@ BENCHMARK_DOCUMENTATION = {
         "Test inspiré du noyau Copy de STREAM mais non conforme à STREAM ; selon le profil, le "
         "tampon peut tenir partiellement dans les caches du processeur.",
         ("stream", "pep-418"),
+        "Mio/s",
     ),
     "storage.write": BenchmarkDocumentation(
         "Écriture séquentielle non tamponnée par Python d'un fichier temporaire, puis fsync. Le "
@@ -135,6 +142,7 @@ BENCHMARK_DOCUMENTATION = {
         "Ce test court n'effectue ni préconditionnement ni mesure d'état stable SNIA ; caches, "
         "compression et politique du système de fichiers peuvent influer.",
         ("snia", "pep-418"),
+        "Mio/s",
     ),
     "storage.read": BenchmarkDocumentation(
         "Prépare puis lit séquentiellement un fichier temporaire par blocs de 1 Mio. Le score "
@@ -142,6 +150,7 @@ BENCHMARK_DOCUMENTATION = {
         "Le cache de pages du système peut servir une partie ou la totalité des données ; ce "
         "score n'est donc pas toujours le débit physique du support.",
         ("snia", "pep-418"),
+        "Mio/s",
     ),
     "storage.random-read": BenchmarkDocumentation(
         "Lectures synchrones de blocs de 4 Kio, à profondeur de file 1 et positions déterministes. "
@@ -149,6 +158,7 @@ BENCHMARK_DOCUMENTATION = {
         "Le fichier est préparé juste avant la mesure et peut rester en cache ; ce protocole "
         "allégé n'est pas un test de conformité SNIA.",
         ("snia", "pep-418"),
+        "IOPS",
     ),
     "storage.random-write": BenchmarkDocumentation(
         "Écritures synchrones de blocs de 4 Kio, à profondeur de file 1 et positions "
@@ -156,6 +166,7 @@ BENCHMARK_DOCUMENTATION = {
         "L'endurance, l'état stable, le remplissage préalable et les différentes profondeurs "
         "de file ne sont pas couverts.",
         ("snia", "pep-418"),
+        "IOPS",
     ),
     "application.json": BenchmarkDocumentation(
         "Un cycle désérialise puis sérialise un document déterministe de 1 000 objets avec le "
@@ -163,6 +174,7 @@ BENCHMARK_DOCUMENTATION = {
         "Le document synthétique ne couvre ni toutes les formes JSON ni les bibliothèques tierces "
         "optimisées.",
         ("rfc-json", "pep-418"),
+        "cycles/s",
     ),
     "application.sqlite": BenchmarkDocumentation(
         "Crée une base SQLite en mode WAL, insère toutes les lignes dans une transaction, valide "
@@ -170,27 +182,32 @@ BENCHMARK_DOCUMENTATION = {
         "Le score mélange CPU et stockage et ne modélise ni concurrence, ni base durable, ni "
         "charge décisionnelle complexe.",
         ("sqlite", "pep-418"),
+        "lignes/s",
     ),
     "gpu.compute-fp32": BenchmarkDocumentation(
         "Un shader WGSL applique 128 multiplications-additions à 262 144 valeurs FP32 ; "
         "le score compte 256 opérations par valeur.",
         "N'évalue ni les unités matricielles spécialisées, ni l'IA, ni le calcul FP64.",
         ("webgpu", "wgsl", "wgpu-py", "ieee-754"),
+        "GFLOP/s",
     ),
     "gpu.memory": BenchmarkDocumentation(
         "Un shader WGSL copie un tampon GPU ; le débit compte les octets lus et écrits.",
         "Les caches et la mémoire unifiée peuvent influencer le résultat.",
         ("webgpu", "wgsl", "wgpu-py"),
+        "Gio/s",
     ),
     "gpu.image-filter": BenchmarkDocumentation(
         "Un shader WGSL applique hors écran un filtre pondéré à cinq pixels voisins.",
         "Ne représente pas les codecs vidéo ni un moteur photo complet.",
         ("webgpu", "wgsl", "wgpu-py"),
+        "Mpixel/s",
     ),
     "gpu.raster": BenchmarkDocumentation(
         "Un pipeline WGSL remplit répétitivement une texture RGBA8 hors écran.",
         "Mesure un remplissage simple, sans géométrie complexe ni ray tracing.",
         ("webgpu", "wgsl", "wgpu-py"),
+        "Mpixel/s",
     ),
 }
 

@@ -6,10 +6,12 @@ import secrets
 
 from fastapi import APIRouter, Header, HTTPException, Request
 
+from .schemas import APIErrorEnvelope
+
 router = APIRouter()
 
 
-@router.get("/health")
+@router.get("/health", responses={401: {"model": APIErrorEnvelope}})
 async def api_health(
     request: Request, authorization: str | None = Header(default=None)
 ) -> dict[str, str]:
