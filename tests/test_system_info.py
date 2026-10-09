@@ -1,6 +1,6 @@
 from types import SimpleNamespace
 
-from benchmark_mac import system_info
+from perfcomparator import system_info
 
 
 class FakeProcess:

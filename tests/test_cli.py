@@ -3,11 +3,11 @@ from pathlib import Path
 from test_repository import sample_report
 from typer.testing import CliRunner
 
-from benchmark_mac import __version__
-from benchmark_mac.cli import app
-from benchmark_mac.contribution import ContributionResult
-from benchmark_mac.public_report import export_public_report, save_public_report
-from benchmark_mac.repository import JsonReportRepository
+from perfcomparator import __version__
+from perfcomparator.cli import app
+from perfcomparator.contribution import ContributionResult
+from perfcomparator.public_report import export_public_report, save_public_report
+from perfcomparator.repository import JsonReportRepository
 
 runner = CliRunner()
 
@@ -217,9 +217,9 @@ def test_contribute_guides_a_user_without_exposing_the_private_report(
         )
 
     monkeypatch.chdir(tmp_path)
-    monkeypatch.setattr("benchmark_mac.cli.github_cli_path", lambda: Path("/fake/gh"))
-    monkeypatch.setattr("benchmark_mac.cli.github_login", lambda _gh: "alice")
-    monkeypatch.setattr("benchmark_mac.cli.submit_public_report", fake_submit)
+    monkeypatch.setattr("perfcomparator.cli.github_cli_path", lambda: Path("/fake/gh"))
+    monkeypatch.setattr("perfcomparator.cli.github_login", lambda _gh: "alice")
+    monkeypatch.setattr("perfcomparator.cli.submit_public_report", fake_submit)
 
     result = runner.invoke(
         app,
@@ -259,7 +259,7 @@ def test_contribute_dry_run_never_connects_to_github(tmp_path: Path, monkeypatch
     def unexpected_github_call():
         raise AssertionError("GitHub ne doit pas être consulté pendant un essai local.")
 
-    monkeypatch.setattr("benchmark_mac.cli.github_cli_path", unexpected_github_call)
+    monkeypatch.setattr("perfcomparator.cli.github_cli_path", unexpected_github_call)
 
     result = runner.invoke(
         app,

@@ -1,15 +1,15 @@
 import pytest
 from test_repository import sample_report
 
-from benchmark_mac.comparison import (
+from perfcomparator.comparison import (
     SCENARIOS,
     analyze_reports,
     difference_label,
     equivalent_duration,
     parse_scenario_weights,
 )
-from benchmark_mac.html_report import render_html
-from benchmark_mac.models import BenchmarkResult, ReadinessSnapshot
+from perfcomparator.html_report import render_html
+from perfcomparator.models import BenchmarkResult, ReadinessSnapshot
 
 
 def result(

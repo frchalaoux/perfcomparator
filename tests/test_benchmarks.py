@@ -3,8 +3,8 @@ from pathlib import Path
 
 import pytest
 
-import benchmark_mac.benchmarks as benchmark_module
-from benchmark_mac.benchmarks import (
+import perfcomparator.benchmarks as benchmark_module
+from perfcomparator.benchmarks import (
     CATALOG,
     DEFINITIONS,
     BenchmarkContext,

@@ -56,7 +56,7 @@ exit /b 2
     $shortcutPath = Join-Path $desktopPath "PerfComparator.lnk"
     $shortcut = $wsh.CreateShortcut($shortcutPath)
     $shortcut.TargetPath = $pythonwPath
-    $shortcut.Arguments = "-m benchmark_mac.desktop_entry"
+    $shortcut.Arguments = "-m perfcomparator.desktop_entry"
     $shortcut.Save()
 
     $repoRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)

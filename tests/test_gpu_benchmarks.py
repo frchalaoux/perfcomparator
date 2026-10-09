@@ -2,7 +2,7 @@ from types import SimpleNamespace
 
 import pytest
 
-from benchmark_mac import gpu_benchmarks
+from perfcomparator import gpu_benchmarks
 
 
 def test_gpu_selection_prefers_discrete_and_accepts_an_explicit_index(monkeypatch) -> None:

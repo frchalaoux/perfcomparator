@@ -423,7 +423,7 @@ def _require_disk_space(context: BenchmarkContext) -> None:
 
 
 def _temporary_path(context: BenchmarkContext) -> tuple[tempfile.TemporaryDirectory[str], Path]:
-    directory = tempfile.TemporaryDirectory(prefix=".benchmark_mac_", dir=context.work_dir)
+    directory = tempfile.TemporaryDirectory(prefix=".perfcomparator_", dir=context.work_dir)
     return directory, Path(directory.name) / "payload.bin"
 
 
@@ -595,7 +595,7 @@ def application_json(context: BenchmarkContext) -> BenchmarkResult:
 
 def application_sqlite(context: BenchmarkContext) -> BenchmarkResult:
     context.work_dir.mkdir(parents=True, exist_ok=True)
-    directory = tempfile.TemporaryDirectory(prefix=".benchmark_mac_", dir=context.work_dir)
+    directory = tempfile.TemporaryDirectory(prefix=".perfcomparator_", dir=context.work_dir)
     path = Path(directory.name) / "benchmark.sqlite3"
     rows = context.profile.sqlite_rows
     try:

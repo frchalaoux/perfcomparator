@@ -3,7 +3,7 @@ import subprocess
 import tomllib
 from pathlib import Path
 
-from benchmark_mac import __version__
+from perfcomparator import __version__
 
 ROOT = Path(__file__).parents[1]
 PUBLISHED_VERSION = "0.5.0"
@@ -24,8 +24,8 @@ def test_versions_are_consistent_across_package_and_installers() -> None:
         "https://github.com/frchalaoux/perfcomparator.git"
     )
     assert project["project"]["scripts"] == {
-        "perfcomparator": "benchmark_mac.cli:app",
-        "benchmark-mac": "benchmark_mac.cli:app",
+        "perfcomparator": "perfcomparator.cli:app",
+        "benchmark-mac": "perfcomparator.cli:app",
     }
     assert CANDIDATE_TAG in posix_installer
     assert CANDIDATE_TAG in windows_installer
@@ -54,6 +54,15 @@ def test_versions_are_consistent_across_package_and_installers() -> None:
     assert "Compatible avec Windows PowerShell 5.1 et PowerShell 7." in windows_installer
     assert "Install-CurrentUv" in windows_installer
     assert 'Join-Path $PSScriptRoot "source-url.txt"' in windows_installer
+    assert 'Join-Path $PSScriptRoot "web-source-url.txt"' in windows_installer
+    assert "--with-executables-from" in posix_installer
+    assert "perfcomparatorweb @ $web_source_url" in posix_installer
+    assert '"perfcomparatorweb @ $webSourceUrl"' in windows_installer
+    pcweb_source = (
+        "perfcomparator-web/archive/6bb98c77a8c54b2471bb623e848bfaaf704733b7.tar.gz"
+    )
+    assert pcweb_source in posix_installer
+    assert pcweb_source in windows_installer
     assert '"-File", $installerPath' in windows_installer
     assert "irm https://astral.sh/uv/install.ps1 | iex" not in windows_installer
     assert "Graphical shortcut not created; CLI remains available." in windows_installer
@@ -65,8 +74,8 @@ def test_versions_are_consistent_across_package_and_installers() -> None:
     )
     for document in (readme, versions):
         assert PUBLISHED_VERSION in document
-        assert expected_posix_url in document
-        assert expected_windows_url in document
+    assert expected_posix_url in versions
+    assert expected_windows_url in versions
     assert "/v0.3.0.dev0/install.sh" in versions
     assert "/v0.3.0.dev0/install.ps1" in versions
 
@@ -84,6 +93,8 @@ def test_release_archives_include_platform_uninstallers() -> None:
     assert "retention-days: 14" in workflow
     assert "Source commit: %s" in workflow
     assert "archive/%s.tar.gz" in workflow
+    assert "pcweb_commit" in workflow
+    assert "web-source-version.txt" in workflow
 
 
 def test_posix_installer_defaults_to_its_own_tag(tmp_path: Path) -> None:
@@ -132,6 +143,29 @@ def test_posix_installer_honors_an_explicit_source(tmp_path: Path) -> None:
     subprocess.run(["sh", str(installer)], check=True, env=environment, capture_output=True)
 
     assert source in log.read_text(encoding="utf-8")
+
+
+def test_posix_installer_adds_pcweb_executable_to_the_pce_tool(tmp_path: Path) -> None:
+    installer = tmp_path / "install.sh"
+    installer.write_text((ROOT / "install.sh").read_text(encoding="utf-8"), encoding="utf-8")
+    fake_bin = tmp_path / "bin"
+    fake_bin.mkdir()
+    uv = fake_bin / "uv"
+    uv.write_text('#!/bin/sh\nprintf "%s\\n" "$*" >> "$UV_LOG"\n', encoding="utf-8")
+    uv.chmod(0o755)
+    log = tmp_path / "uv.log"
+    web_source = "file:///tmp/perfcomparator-web"
+    environment = os.environ | {
+        "HOME": str(tmp_path),
+        "PATH": f"{fake_bin}{os.pathsep}{os.environ['PATH']}",
+        "UV_LOG": str(log),
+        "PERFCOMPARATOR_WEB_SOURCE": web_source,
+    }
+
+    subprocess.run(["sh", str(installer)], check=True, env=environment, capture_output=True)
+
+    calls = log.read_text(encoding="utf-8")
+    assert f"--with-executables-from perfcomparatorweb @ {web_source}" in calls
 
 
 def test_posix_installer_uses_source_url_bundled_with_the_archive(tmp_path: Path) -> None:

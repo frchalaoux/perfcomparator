@@ -93,7 +93,7 @@ perfcomparator compare premier-rapport.json second-rapport.json --html comparais
 Le premier rapport sert de référence. Les mesures doivent utiliser des versions
 de protocole et des profils compatibles pour que la comparaison soit
 pertinente. La CLI fonctionne aussi sur un serveur sans bureau graphique.
-L'interface peut être ouverte depuis un terminal avec `perfcomparator desktop`.
+L'interface Web peut être ouverte depuis un terminal avec `perfcomparator web`.
 `perfcomparator --help` liste les autres commandes.
 
 ## Publier, télécharger et comparer un rapport
@@ -163,6 +163,8 @@ machine ni l'exactitude des performances déclarées. Voir le
 | Besoin | Document |
 | --- | --- |
 | Comprendre l'architecture, ajouter un benchmark et exécuter les tests locaux | [Guide développeur](docs/guide-developpeur.md) |
+| Comparer l’architecture actuelle à SMB et SMB-WEB avant de définir les composants | [Référence d’architecture](docs/architecture-perfcomparator-smb-reference.md) |
+| Préparer l'interface Web locale et serveur | [Plan d'évolution de l'interface Web](docs/plan-evolution-interface-web.md) |
 | Construire les installateurs, les tester sur les systèmes cibles et promouvoir les artefacts validés | [Stratégie de publication](docs/strategie-publication.md) |
 | Exporter la documentation et ses diagrammes Mermaid en PDF | [Guide d'export PDF](docs/export-markdown-pdf.md) |
 

@@ -2,6 +2,12 @@ name: Package desktop installers
 
 on:
   workflow_dispatch:
+    inputs:
+      pcweb_commit:
+        description: Exact 40-character PCWEB commit to bundle with PCE
+        default: 6bb98c77a8c54b2471bb623e848bfaaf704733b7
+        required: true
+        type: string
 
 permissions:
   contents: read
@@ -9,9 +15,13 @@ permissions:
 jobs:
   prepare:
     runs-on: ubuntu-24.04
+    env:
+      PCWEB_SHA_INPUT: ${{ inputs.pcweb_commit }}
     outputs:
       source_sha: ${{ steps.metadata.outputs.source_sha }}
       package_version: ${{ steps.metadata.outputs.package_version }}
+      pcweb_sha: ${{ steps.metadata.outputs.pcweb_sha }}
+      pcweb_version: ${{ steps.metadata.outputs.pcweb_version }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -22,16 +32,35 @@ jobs:
             echo "Temporary installer builds must be launched from main." >&2
             exit 1
           fi
+      - name: Check out the exact PCWEB source
+        uses: actions/checkout@v4
+        with:
+          repository: frchalaoux/perfcomparator-web
+          ref: ${{ inputs.pcweb_commit }}
+          path: pcweb-source
+          persist-credentials: false
       - name: Record exact source commit and package version
         id: metadata
         run: |
           source_sha=$(git rev-parse HEAD)
           project_version=$(python -c 'import pathlib, tomllib; print(tomllib.loads(pathlib.Path("pyproject.toml").read_text())["project"]["version"])')
           package_version="v$project_version"
+          pcweb_sha="$PCWEB_SHA_INPUT"
+          if ! printf '%s' "$pcweb_sha" | grep -Eq '^[0-9a-f]{40}$'; then
+            echo "pcweb_commit must be a full 40-character lowercase commit SHA." >&2
+            exit 1
+          fi
+          actual_pcweb_sha=$(git -C pcweb-source rev-parse HEAD)
+          test "$actual_pcweb_sha" = "$pcweb_sha"
+          pcweb_version=$(python -c 'import pathlib, tomllib; print(tomllib.loads(pathlib.Path("pcweb-source/pyproject.toml").read_text())["project"]["version"])')
           echo "source_sha=$source_sha" >> "$GITHUB_OUTPUT"
           echo "package_version=$package_version" >> "$GITHUB_OUTPUT"
+          echo "pcweb_sha=$pcweb_sha" >> "$GITHUB_OUTPUT"
+          echo "pcweb_version=$pcweb_version" >> "$GITHUB_OUTPUT"
           echo "Source commit: $source_sha"
           echo "Package version: $package_version"
+          echo "PCWEB commit: $pcweb_sha"
+          echo "PCWEB package version: $pcweb_version"
 
   macos:
     needs: prepare
@@ -39,6 +68,8 @@ jobs:
     env:
       SOURCE_SHA: ${{ needs.prepare.outputs.source_sha }}
       PACKAGE_VERSION: ${{ needs.prepare.outputs.package_version }}
+      PCWEB_SHA: ${{ needs.prepare.outputs.pcweb_sha }}
+      PCWEB_VERSION: ${{ needs.prepare.outputs.pcweb_version }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -52,7 +83,12 @@ jobs:
           printf '%s\n' "$PACKAGE_VERSION" > package/PerfComparator/release-version.txt
           printf '%s\n' "$SOURCE_SHA" > package/PerfComparator/source-commit.txt
           printf 'https://github.com/%s/archive/%s.tar.gz\n' "$GITHUB_REPOSITORY" "$SOURCE_SHA" > package/PerfComparator/source-url.txt
+          printf '%s\n' "$PCWEB_SHA" > package/PerfComparator/web-source-commit.txt
+          printf '%s\n' "$PCWEB_VERSION" > package/PerfComparator/web-source-version.txt
+          printf 'https://github.com/frchalaoux/perfcomparator-web/archive/%s.tar.gz\n' "$PCWEB_SHA" > package/PerfComparator/web-source-url.txt
           ditto -c -k --sequesterRsrc --keepParent package/PerfComparator PerfComparator-macOS.zip
+      - name: Smoke install and exercise both services
+        run: sh tests/smoke-installed-pair.sh package/PerfComparator
       - uses: actions/upload-artifact@v4
         with:
           name: installer-macos
@@ -67,6 +103,8 @@ jobs:
     env:
       SOURCE_SHA: ${{ needs.prepare.outputs.source_sha }}
       PACKAGE_VERSION: ${{ needs.prepare.outputs.package_version }}
+      PCWEB_SHA: ${{ needs.prepare.outputs.pcweb_sha }}
+      PCWEB_VERSION: ${{ needs.prepare.outputs.pcweb_version }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -84,7 +122,14 @@ jobs:
           [System.IO.File]::WriteAllText((Join-Path $bundle 'source-commit.txt'), $env:SOURCE_SHA, [System.Text.Encoding]::ASCII)
           $sourceUrl = "{0}/{1}/archive/{2}.tar.gz" -f $env:GITHUB_SERVER_URL.TrimEnd('/'), $env:GITHUB_REPOSITORY, $env:SOURCE_SHA
           [System.IO.File]::WriteAllText((Join-Path $bundle 'source-url.txt'), $sourceUrl, [System.Text.Encoding]::ASCII)
+          [System.IO.File]::WriteAllText((Join-Path $bundle 'web-source-commit.txt'), $env:PCWEB_SHA, [System.Text.Encoding]::ASCII)
+          [System.IO.File]::WriteAllText((Join-Path $bundle 'web-source-version.txt'), $env:PCWEB_VERSION, [System.Text.Encoding]::ASCII)
+          $webSourceUrl = "https://github.com/frchalaoux/perfcomparator-web/archive/{0}.tar.gz" -f $env:PCWEB_SHA
+          [System.IO.File]::WriteAllText((Join-Path $bundle 'web-source-url.txt'), $webSourceUrl, [System.Text.Encoding]::ASCII)
           Compress-Archive -Path package/PerfComparator/* -DestinationPath PerfComparator-Windows-x64.zip
+      - name: Smoke install and exercise both services
+        shell: pwsh
+        run: ./tests/windows/test-installed-pair.ps1 -InstallerDirectory package/PerfComparator
       - uses: actions/upload-artifact@v4
         with:
           name: installer-windows
@@ -99,6 +144,8 @@ jobs:
     env:
       SOURCE_SHA: ${{ needs.prepare.outputs.source_sha }}
       PACKAGE_VERSION: ${{ needs.prepare.outputs.package_version }}
+      PCWEB_SHA: ${{ needs.prepare.outputs.pcweb_sha }}
+      PCWEB_VERSION: ${{ needs.prepare.outputs.pcweb_version }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -112,6 +159,9 @@ jobs:
           printf '%s\n' "$PACKAGE_VERSION" > package/PerfComparator/release-version.txt
           printf '%s\n' "$SOURCE_SHA" > package/PerfComparator/source-commit.txt
           printf 'https://github.com/%s/archive/%s.tar.gz\n' "$GITHUB_REPOSITORY" "$SOURCE_SHA" > package/PerfComparator/source-url.txt
+          printf '%s\n' "$PCWEB_SHA" > package/PerfComparator/web-source-commit.txt
+          printf '%s\n' "$PCWEB_VERSION" > package/PerfComparator/web-source-version.txt
+          printf 'https://github.com/frchalaoux/perfcomparator-web/archive/%s.tar.gz\n' "$PCWEB_SHA" > package/PerfComparator/web-source-url.txt
           chmod 755 \
             package/PerfComparator/install-linux.sh \
             package/PerfComparator/install.sh \
@@ -119,6 +169,8 @@ jobs:
             package/PerfComparator/install.desktop \
             PerfComparator-uninstall-Linux.sh
           tar -czf PerfComparator-Linux-x86_64.tar.gz -C package PerfComparator
+      - name: Smoke install and exercise both services
+        run: sh tests/smoke-installed-pair.sh package/PerfComparator
       - uses: actions/upload-artifact@v4
         with:
           name: installer-linux
@@ -129,7 +181,8 @@ jobs:
       - name: Build Ubuntu/Debian package
         run: |
           test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
-          bash packaging/linux/build-deb.sh "$PACKAGE_VERSION" dist
+          PERFCOMPARATOR_WEB_COMMIT="$PCWEB_SHA" PERFCOMPARATOR_WEB_VERSION="$PCWEB_VERSION" \
+            bash packaging/linux/build-deb.sh "$PACKAGE_VERSION" dist
       - uses: actions/upload-artifact@v4
         with:
           name: installer-linux-deb
@@ -142,6 +195,8 @@ jobs:
     env:
       SOURCE_SHA: ${{ needs.prepare.outputs.source_sha }}
       PACKAGE_VERSION: ${{ needs.prepare.outputs.package_version }}
+      PCWEB_SHA: ${{ needs.prepare.outputs.pcweb_sha }}
+      PCWEB_VERSION: ${{ needs.prepare.outputs.pcweb_version }}
     steps:
       - uses: actions/download-artifact@v4
         with:
@@ -165,23 +220,36 @@ jobs:
             test -f "dist/$file" || { echo "Missing installer artifact: $file" >&2; exit 1; }
           done
           expected_source_url="https://github.com/$GITHUB_REPOSITORY/archive/$SOURCE_SHA.tar.gz"
+          expected_web_source_url="https://github.com/frchalaoux/perfcomparator-web/archive/$PCWEB_SHA.tar.gz"
           temp_dir=$(mktemp -d)
           trap 'rm -rf "$temp_dir"' EXIT
           verify_zip_source() {
             archive=$1
             commit_path=$(unzip -Z1 "$archive" | grep -E '(^|/)source-commit.txt$' | head -n 1 || true)
             url_path=$(unzip -Z1 "$archive" | grep -E '(^|/)source-url.txt$' | head -n 1 || true)
-            test -n "$commit_path" && test -n "$url_path"
+            web_commit_path=$(unzip -Z1 "$archive" | grep -E '(^|/)web-source-commit.txt$' | head -n 1 || true)
+            web_version_path=$(unzip -Z1 "$archive" | grep -E '(^|/)web-source-version.txt$' | head -n 1 || true)
+            web_url_path=$(unzip -Z1 "$archive" | grep -E '(^|/)web-source-url.txt$' | head -n 1 || true)
+            test -n "$commit_path" && test -n "$url_path" && test -n "$web_commit_path" && test -n "$web_version_path" && test -n "$web_url_path"
             test "$(unzip -p "$archive" "$commit_path" | tr -d '\r\n')" = "$SOURCE_SHA"
             test "$(unzip -p "$archive" "$url_path" | tr -d '\r\n')" = "$expected_source_url"
+            test "$(unzip -p "$archive" "$web_commit_path" | tr -d '\r\n')" = "$PCWEB_SHA"
+            test "$(unzip -p "$archive" "$web_version_path" | tr -d '\r\n')" = "$PCWEB_VERSION"
+            test "$(unzip -p "$archive" "$web_url_path" | tr -d '\r\n')" = "$expected_web_source_url"
           }
           verify_zip_source dist/PerfComparator-macOS.zip
           verify_zip_source dist/PerfComparator-Windows-x64.zip
           test "$(tar -xOf dist/PerfComparator-Linux-x86_64.tar.gz PerfComparator/source-commit.txt | tr -d '\r\n')" = "$SOURCE_SHA"
           test "$(tar -xOf dist/PerfComparator-Linux-x86_64.tar.gz PerfComparator/source-url.txt | tr -d '\r\n')" = "$expected_source_url"
+          test "$(tar -xOf dist/PerfComparator-Linux-x86_64.tar.gz PerfComparator/web-source-commit.txt | tr -d '\r\n')" = "$PCWEB_SHA"
+          test "$(tar -xOf dist/PerfComparator-Linux-x86_64.tar.gz PerfComparator/web-source-version.txt | tr -d '\r\n')" = "$PCWEB_VERSION"
+          test "$(tar -xOf dist/PerfComparator-Linux-x86_64.tar.gz PerfComparator/web-source-url.txt | tr -d '\r\n')" = "$expected_web_source_url"
           dpkg-deb --extract dist/PerfComparator-Ubuntu-Debian-amd64.deb "$temp_dir/deb"
           test "$(cat "$temp_dir/deb/usr/lib/perfcomparator-installer/source-commit.txt")" = "$SOURCE_SHA"
           test "$(cat "$temp_dir/deb/usr/lib/perfcomparator-installer/source-url.txt")" = "$expected_source_url"
+          test "$(cat "$temp_dir/deb/usr/lib/perfcomparator-installer/web-source-commit.txt")" = "$PCWEB_SHA"
+          test "$(cat "$temp_dir/deb/usr/lib/perfcomparator-installer/web-source-version.txt")" = "$PCWEB_VERSION"
+          test "$(cat "$temp_dir/deb/usr/lib/perfcomparator-installer/web-source-url.txt")" = "$expected_web_source_url"
           {
             printf 'Source commit: %s\n' "$SOURCE_SHA"
             printf 'Package version: %s\n\n' "$PACKAGE_VERSION"

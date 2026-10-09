@@ -3,7 +3,7 @@ import io
 import zipfile
 from pathlib import Path
 
-from benchmark_mac import github_cli
+from perfcomparator import github_cli
 
 
 def test_managed_github_cli_is_installed_from_a_verified_archive(tmp_path, monkeypatch) -> None:
