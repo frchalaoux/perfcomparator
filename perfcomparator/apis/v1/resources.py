@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import re
 import secrets
+from dataclasses import asdict
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request
@@ -104,7 +105,7 @@ def get_system(request: Request) -> SystemEnvelope:
     adapters: list[GPUAdapterResponse] = []
     warnings: list[str] = []
     try:
-        adapters = [GPUAdapterResponse.model_validate(item) for item in gpu_adapters()]
+        adapters = [GPUAdapterResponse.model_validate(asdict(item)) for item in gpu_adapters()]
     except Exception:  # noqa: BLE001 - l'inventaire système reste disponible sans WebGPU
         warnings.append("L’inventaire des adaptateurs WebGPU est indisponible.")
     else:
