@@ -311,7 +311,7 @@ catch {
 
 Write-Host "PerfComparator $releaseVersion est installé."
 if ($shortcutCreated) {
-    Write-Host "Pour lancer l'interface Web : utilisez le raccourci créé ou perfcomparator web"
+    Write-Host "Pour lancer l'interface Web : utilisez le raccourci créé ou perfcomparator start"
 }
 else {
     Write-Host "La ligne de commande reste disponible : perfcomparator --version"

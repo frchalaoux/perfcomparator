@@ -171,7 +171,8 @@ def validate_reports(reports: list[BenchmarkReport]) -> None:
             raise ValueError("Les rapports doivent utiliser la même version de Python.")
         if report.system.python_implementation != reference.system.python_implementation:
             raise ValueError("Les rapports doivent utiliser la même implémentation de Python.")
-        if report.schema_version != reference.schema_version:
+        schema_pair = {report.schema_version, reference.schema_version}
+        if report.schema_version != reference.schema_version and schema_pair != {6, 7}:
             raise ValueError("Les rapports doivent utiliser le même schéma JSON.")
 
 

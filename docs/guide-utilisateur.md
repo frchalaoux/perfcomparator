@@ -11,7 +11,7 @@ Après l'installation, double-cliquer sur l'icône ou le raccourci
 ouvrir l'interface dans le navigateur depuis un terminal :
 
 ```bash
-perfcomparator web
+perfcomparator start
 ```
 
 L'installateur prépare `uv`, Python géré par `uv`, PCE et PCWEB, puis crée les
@@ -22,10 +22,11 @@ l'installation. Le raccourci ouvre la page locale dans le navigateur. Pour les
 
 Les serveurs peuvent aussi être gérés séparément : les commandes
 `perfcomparator engine start`, `perfcomparator engine stop` et
-`perfcomparator engine status` pilotent PCE. Les commandes
-`perfcomparatorweb start`, `perfcomparatorweb stop` et
-`perfcomparatorweb status` pilotent PCWEB. La commande
-`perfcomparator web stop` arrête PCWEB puis PCE.
+`perfcomparator engine status` pilotent PCE seul. `perfcomparator web stop` et
+`perfcomparator web status` pilotent PCWEB seul. `perfcomparator web start`
+reste un alias historique pour démarrer les deux serveurs ; le raccourci
+principal est `perfcomparator start`. `perfcomparator stop` arrête PCWEB puis
+PCE.
 
 ## Préparer une machine
 

@@ -39,6 +39,8 @@ instructions propres à chaque version.
 
 - [Guide développeur](docs/guide-developpeur.md) : architecture, validations
   locales (`ruff`, `pytest`, construction du paquet) et ajout d'un benchmark.
+- [Lexique technique](docs/lexique-technique.md) : définitions accessibles des
+  termes du code, de l’architecture Web, des campagnes et des rapports.
 - [Référence d’architecture PerfComparator, SMB et SMB-WEB](docs/architecture-perfcomparator-smb-reference.md) : état du code, motifs réutilisables, topologies à deux composants et décisions à prendre.
 - [Plan d’évolution de l’interface Web](docs/plan-evolution-interface-web.md) :
   architecture locale et serveur, sécurité, stockage, API et phases de

@@ -235,23 +235,25 @@ d’un CDN. Toutes ses ressources sont servies par PCWEB.
 Commandes cibles :
 
 ```bash
-perfcomparator web start
-perfcomparator web stop
-perfcomparator web status
+perfcomparator start
+perfcomparator stop
 perfcomparator engine start
 perfcomparator engine stop
 perfcomparator engine status
+perfcomparator web start
+perfcomparator web stop
+perfcomparator web status
 perfcomparatorweb start
 perfcomparatorweb stop
 perfcomparatorweb status
 ```
 
-`perfcomparator web start` lance PCE puis PCWEB en arrière-plan, vérifie leur
-disponibilité, puis ouvre l’interface servie par PCWEB. `perfcomparator web`
-sans sous-commande est son raccourci. `perfcomparator web stop` arrête PCWEB
-puis PCE ; `status` affiche l’état des deux. Les commandes `engine` et
-`perfcomparatorweb` gèrent chaque composant séparément. Le lancement de PCWEB
-seul requiert l’URL PCE et son secret local.
+`perfcomparator start` lance PCE puis PCWEB en arrière-plan, vérifie leur
+disponibilité, puis ouvre l’interface servie par PCWEB. `perfcomparator stop`
+arrête PCWEB puis PCE. Les commandes `engine` gèrent PCE seul ; les commandes
+`web stop/status` et `perfcomparatorweb` gèrent PCWEB seul. `perfcomparator web
+start` reste un alias historique du démarrage groupé. Le démarrage séparé de
+PCWEB requiert PCE déjà actif ainsi que son URL et son secret local.
 
 Les commandes distinctes ci-dessus permettent aussi de démarrer et d’arrêter
 PCE ou PCWEB individuellement, notamment pour le développement et le

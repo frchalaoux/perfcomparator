@@ -12,14 +12,14 @@ sh "$installer_dir/install.sh"
 perfcomparator="$UV_TOOL_BIN_DIR/perfcomparator"
 perfcomparatorweb="$UV_TOOL_BIN_DIR/perfcomparatorweb"
 
-"$perfcomparator" web start --no-open-browser
+"$perfcomparator" start --no-open-browser
 web_url=$(sed -n 's/.*"url": "\([^"]*\)".*/\1/p' "$PERFCOMPARATOR_STATE_DIR/web.json")
 curl --fail --silent "$web_url/" | grep -q 'Moteur PCE'
 if "$perfcomparator" engine stop >/dev/null 2>&1; then
     echo "PCE stopped while PCWEB was still active." >&2
     exit 1
 fi
-"$perfcomparator" web stop
+"$perfcomparator" stop
 
 "$perfcomparator" engine start
 "$perfcomparatorweb" start --no-open-browser
