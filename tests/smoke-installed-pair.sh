@@ -14,7 +14,8 @@ perfcomparatorweb="$UV_TOOL_BIN_DIR/perfcomparatorweb"
 
 "$perfcomparator" start --no-open-browser
 web_url=$(sed -n 's/.*"url": "\([^"]*\)".*/\1/p' "$PERFCOMPARATOR_STATE_DIR/web.json")
-curl --fail --silent "$web_url/" | grep -q 'Moteur PCE'
+curl --fail --silent "$web_url/" | grep -q 'Machine analysée'
+curl --fail --silent "$web_url/campaigns/new" | grep -q 'Vérifier la préparation'
 if "$perfcomparator" engine stop >/dev/null 2>&1; then
     echo "PCE stopped while PCWEB was still active." >&2
     exit 1
