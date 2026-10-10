@@ -3,8 +3,12 @@
 from __future__ import annotations
 
 from datetime import datetime
+from typing import Literal
 
 from pydantic import BaseModel, Field
+
+from perfcomparator.models import CampaignRequest, ReadinessSnapshot
+from perfcomparator.tasks import CampaignTask, CampaignTaskEvent, TaskStatus
 
 
 class GPUAdapterResponse(BaseModel):
@@ -88,6 +92,7 @@ class BenchmarkCatalogResponse(BaseModel):
 class ReportSummary(BaseModel):
     report_id: str
     recorded_at: datetime
+    execution_status: Literal["completed", "cancelled"]
     label: str | None
     profile: str
     repetitions: int
@@ -149,3 +154,79 @@ class ReportDetailResponse(ReportSummary):
     environment_warnings: list[str]
     results: list[ReportResultResponse]
     failures: list[ReportFailureResponse]
+
+
+class CampaignTaskResponse(BaseModel):
+    task_id: str
+    request: CampaignRequest
+    status: TaskStatus
+    created_at: datetime
+    started_at: datetime | None
+    finished_at: datetime | None
+    current_benchmark: str | None
+    completed_benchmarks: int
+    total_benchmarks: int
+    report_id: str | None
+    error_code: str | None
+
+    @classmethod
+    def from_task(cls, task: CampaignTask) -> CampaignTaskResponse:
+        return cls.model_validate(task.model_dump())
+
+
+class CampaignSubmissionResponse(BaseModel):
+    task: CampaignTaskResponse
+    created: bool
+
+
+class CampaignCancellationResponse(BaseModel):
+    task: CampaignTaskResponse
+    cancellation_requested: bool
+
+
+class CampaignEventResponse(BaseModel):
+    sequence: int
+    occurred_at: datetime
+    event_type: str
+    payload: dict[str, str | int | float | bool | None]
+
+    @classmethod
+    def from_event(cls, event: CampaignTaskEvent) -> CampaignEventResponse:
+        return cls.model_validate(event.model_dump())
+
+
+class ReadinessProcessResponse(BaseModel):
+    name: str
+    cpu_percent: float
+    memory_percent: float
+
+
+class CampaignReadinessResponse(BaseModel):
+    sample_seconds: float
+    cpu_percent: float
+    memory_available_percent: float
+    memory_available_bytes: int
+    swap_percent: float
+    active_processes: list[ReadinessProcessResponse]
+    warnings: list[str]
+    suitable: bool
+
+    @classmethod
+    def from_snapshot(cls, snapshot: ReadinessSnapshot) -> CampaignReadinessResponse:
+        return cls(
+            sample_seconds=snapshot.sample_seconds,
+            cpu_percent=snapshot.cpu_percent,
+            memory_available_percent=snapshot.memory_available_percent,
+            memory_available_bytes=snapshot.memory_available_bytes,
+            swap_percent=snapshot.swap_percent,
+            active_processes=[
+                ReadinessProcessResponse(
+                    name=process.name,
+                    cpu_percent=process.cpu_percent,
+                    memory_percent=process.memory_percent,
+                )
+                for process in snapshot.active_processes
+            ],
+            warnings=snapshot.warnings,
+            suitable=snapshot.suitable,
+        )

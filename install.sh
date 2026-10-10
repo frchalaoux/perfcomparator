@@ -154,9 +154,9 @@ if [ -x "$perfcomparator_command" ] && [ -t 1 ]; then
 else
     echo
     if command -v perfcomparator >/dev/null 2>&1; then
-        echo "PerfComparator est installé. Lancez : perfcomparator web"
+        echo "PerfComparator est installé. Lancez : perfcomparator start"
     else
-        echo "PerfComparator est installé. Fermez et rouvrez le terminal, puis lancez : perfcomparator web"
+        echo "PerfComparator est installé. Fermez et rouvrez le terminal, puis lancez : perfcomparator start"
     fi
 fi
 

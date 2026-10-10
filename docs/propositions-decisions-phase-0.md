@@ -16,11 +16,11 @@ simple à installer et à lancer.
 
 | Sujet | Décision recommandée | Motif |
 | --- | --- | --- |
-| Processus | Deux processus FastAPI distincts, démarrés et arrêtés par `perfcomparator web`. | Frontières nettes PCE/PCWEB, panne isolable et évolution future vers des agents. |
+| Processus | Deux processus FastAPI distincts, démarrés et arrêtés par `perfcomparator start|stop`. | Frontières nettes PCE/PCWEB, panne isolable et évolution future vers des agents. |
 | Dépôts | PCE reste dans le dépôt `perfcomparator` ; PCWEB aura le dépôt `perfcomparator-web` ; `perfcomparator-results` reste le catalogue public. **Noms confirmés.** | Suit la séparation SMB/SMB-WEB et le souhait de construire PCWEB comme composant autonome. |
 | Distributions | PCE conserve la distribution `perfcomparator` et son CLI ; son module Python est `perfcomparator`. PCWEB utilise la distribution et le module Python `perfcomparatorweb`. **Noms confirmés.** | Conserve la commande et le nom de distribution PCE, tout en alignant le paquet racine sur le modèle SMB. |
 | Paquet Python PCE | Nom de distribution et paquet Python `perfcomparator`, installé depuis le dossier racine `perfcomparator/`, comme `sizemybike/` dans SMB. PCWEB conserve son propre paquet `perfcomparatorweb/`. | Aligne les deux composants sur le modèle SMB et garde la communication PCE–PCWEB à la frontière HTTP. |
-| Lancement | `perfcomparator web start|stop|status` gère les deux processus ; `perfcomparator engine start|stop|status` gère PCE seul ; `perfcomparatorweb start|stop|status` gère PCWEB seul. `perfcomparator web` reste un raccourci de démarrage. | Une commande simple pour l’usage courant, avec gestion indépendante pour le développement et l’exploitation. |
+| Lancement | `perfcomparator start|stop` gère les deux processus ; `perfcomparator engine start|stop|status` gère PCE seul ; `perfcomparator web stop|status` gère PCWEB seul. `perfcomparatorweb` reste son CLI autonome ; `perfcomparator web start` est un alias historique de démarrage groupé. | Une commande simple pour l’usage courant, avec gestion indépendante pour le développement et l’exploitation. |
 | API | PCE est l’autorité du contrat JSON `/api/v1`, des codes d’erreur et du document OpenAPI. PCWEB utilise un repository HTTP partagé et des DTO validés contre ce contrat. | Contrat explicite et versionné, conforme au modèle SMB-WEB. |
 | Authentification locale | Secret aléatoire créé à chaque lancement, transmis de l’orchestrateur à PCWEB puis envoyé en Bearer à PCE ; jamais dans une URL ou un journal. Écoute loopback uniquement, `Host`/`Origin` stricts, CORS désactivé. | Protège le port PCE des requêtes locales forgées sans introduire de comptes dans le MVP. |
 | Interface Web | Pages HTML rendues par PCWEB, avec JavaScript natif limité ; toutes les ressources sont embarquées. **Choix confirmé.** | Suit SMB-WEB et évite une chaîne de construction frontend et une dépendance réseau. |
@@ -114,15 +114,13 @@ Commandes utilisateur retenues pour l’implémentation :
 
 | Action | Commande |
 | --- | --- |
-| Démarrer PCE et PCWEB ensemble | `perfcomparator web start` |
-| Arrêter les deux, PCWEB puis PCE | `perfcomparator web stop` |
-| Voir l’état des deux | `perfcomparator web status` |
+| Démarrer PCE et PCWEB ensemble | `perfcomparator start` |
+| Arrêter les deux, PCWEB puis PCE | `perfcomparator stop` |
 | Démarrer, arrêter ou vérifier PCE seul | `perfcomparator engine start`, `perfcomparator engine stop`, `perfcomparator engine status` |
-| Démarrer, arrêter ou vérifier PCWEB seul | `perfcomparatorweb start`, `perfcomparatorweb stop`, `perfcomparatorweb status` |
+| Arrêter ou vérifier PCWEB seul | `perfcomparator web stop`, `perfcomparator web status` |
+| Démarrer PCWEB seul | `perfcomparatorweb start` |
 
-Pour conserver l’usage déjà décrit dans le plan, `perfcomparator web` sans
-sous-commande équivaudra à `perfcomparator web start`. Les commandes `start`
-lanceront les serveurs en arrière-plan ; `stop` demandera une fermeture
+Les commandes `start` lanceront les serveurs en arrière-plan ; `stop` demandera une fermeture
 ordonnée et attendra la fin du processus ; `status` indiquera notamment si le
 serveur répond sur son port local. Les PID, ports et secrets de gestion seront
 conservés dans le répertoire d’état privé de l’utilisateur, distinct des
@@ -135,8 +133,8 @@ car celle-ci ne garantit pas le même nettoyage sous Windows. La commande
 PCWEB utilisée seule recevra l’URL PCE et son secret par options ou fichier de
 configuration privé ; le démarrage groupé transmettra ces paramètres
 temporaires automatiquement. Si PCE est arrêté alors que PCWEB tourne,
-`engine stop` avertira et refusera par défaut ; `web stop` arrêtera dans
-l’ordre inverse du démarrage.
+`engine stop` avertira et refusera par défaut ; `perfcomparator stop` arrêtera
+PCWEB avant PCE.
 
 Cette convention fixe l’interface CLI proposée, mais le mécanisme de contrôle
 et de lancement reste un détail d’implémentation à vérifier par smoke tests
@@ -245,7 +243,7 @@ Les sujets suivants sont reportés aux phases qui en ont besoin :
   avec Pydantic dans PCWEB.
 - Adapter les métadonnées des installateurs aux deux versions et valider le
   démarrage/arrêt de la paire sur macOS, Windows et Linux.
-- Confirmer la règle d’évolution du schéma privé nécessaire aux rapports
-  annulés et son interaction avec l’export public.
+- La règle du schéma privé pour les rapports annulés est fixée en schéma 7 :
+  `execution_status` marque les rapports partiels ; l’export public les refuse.
 - Vérifier que le chemin `Documents/PerfComparator` peut être résolu de façon
   fiable sur chaque plateforme et permettre un répertoire configuré.

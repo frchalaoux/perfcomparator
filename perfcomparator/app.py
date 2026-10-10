@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import asyncio
 import uuid
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
@@ -12,15 +14,34 @@ from starlette.middleware.trustedhost import TrustedHostMiddleware
 
 from .apis.base import api_router
 from .core.config import Settings
+from .executor import LocalBenchmarkExecutor
 from .repository import JsonReportRepository
+from .tasks import CampaignOrchestrator, CampaignTaskStore
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:
     resolved = settings or Settings.from_environment()
-    app = FastAPI(title="PerfComparator Engine", version="1")
+    task_store = CampaignTaskStore(resolved.state_dir / "campaigns.sqlite3")
+    reports = JsonReportRepository(resolved.reports_dir)
+    campaigns = CampaignOrchestrator(
+        task_store,
+        reports,
+        LocalBenchmarkExecutor(work_dir=resolved.state_dir / "work"),
+    )
+
+    @asynccontextmanager
+    async def lifespan(_app: FastAPI):
+        try:
+            yield
+        finally:
+            await asyncio.to_thread(campaigns.close)
+
+    app = FastAPI(title="PerfComparator Engine", version="1", lifespan=lifespan)
     app.add_middleware(TrustedHostMiddleware, allowed_hosts=["127.0.0.1", "localhost"])
     app.state.settings = resolved
-    app.state.reports = JsonReportRepository(resolved.reports_dir)
+    app.state.reports = reports
+    app.state.task_store = task_store
+    app.state.campaigns = campaigns
 
     @app.exception_handler(StarletteHTTPException)
     async def handle_http_error(request: Request, error: StarletteHTTPException) -> JSONResponse:
@@ -30,6 +51,11 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             "forbidden": ("forbidden", "Accès refusé."),
             "benchmark_not_found": ("not_found", "Cette ressource n’existe pas."),
             "report_not_found": ("not_found", "Cette ressource n’existe pas."),
+            "task_not_found": ("not_found", "Cette ressource n’existe pas."),
+            "idempotency_conflict": (
+                "idempotency_conflict",
+                "Cette clé a déjà été utilisée pour une autre demande.",
+            ),
         }
         if error.status_code == 404:
             default_error = ("not_found", "Cette ressource n’existe pas.")

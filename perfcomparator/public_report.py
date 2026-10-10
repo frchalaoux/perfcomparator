@@ -26,7 +26,7 @@ from .models import (
 PUBLIC_FORMAT_VERSION = 3
 PUBLIC_LICENSE = "CC0-1.0"
 MAX_PUBLIC_REPORT_BYTES = 2 * 1_048_576
-SUPPORTED_PRIVATE_SCHEMAS = frozenset({3, 4, 5, 6})
+SUPPORTED_PRIVATE_SCHEMAS = frozenset({3, 4, 5, 6, 7})
 SUPPORTED_PROTOCOL = "0.3.0"
 SUITE_VERSION_PATTERN = re.compile(r"^\d+\.\d+\.\d+(?:\.dev\d+)?$")
 PRIVATE_PATH_PATTERNS = (
@@ -303,7 +303,7 @@ def validate_public_report(report: PublicBenchmarkReport) -> PublicBenchmarkRepo
     ):
         raise ValueError("Un rapport public v1 ne peut pas contenir l'identité commerciale.")
     if report.format_version == 2 and (
-        report.source_schema_version == 6
+        report.source_schema_version in {6, 7}
         or report.system.product_sku is not None
         or report.system.commercial_name is None
         or report.system.model_identifier is None
@@ -463,6 +463,8 @@ def export_public_report(
         raise ValueError(
             f"Le schéma privé {report.schema_version} ne peut pas être exporté sûrement."
         )
+    if report.execution_status != "completed":
+        raise ValueError("Un rapport de campagne annulée ne peut pas être exporté.")
     protocol = report_protocol(report)
     if protocol != SUPPORTED_PROTOCOL:
         raise ValueError(f"Le protocole {protocol} ne peut pas être exporté sûrement.")

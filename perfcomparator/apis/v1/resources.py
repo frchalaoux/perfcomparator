@@ -8,8 +8,9 @@ import secrets
 from dataclasses import asdict
 from pathlib import Path
 
-from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 
+from perfcomparator.apis.security import require_api_token
 from perfcomparator.benchmarks import (
     BENCHMARK_DOCUMENTATION,
     CATALOG,
@@ -40,19 +41,8 @@ from .schemas import (
     SystemResponse,
 )
 
-
-def _require_api_token(
-    request: Request,
-    authorization: str | None = Header(default=None),
-) -> None:
-    token = request.app.state.settings.api_token
-    expected = f"Bearer {token}" if token else ""
-    if not expected or not secrets.compare_digest(authorization or "", expected):
-        raise HTTPException(status_code=401, detail="unauthorized")
-
-
 router = APIRouter(
-    dependencies=[Depends(_require_api_token)],
+    dependencies=[Depends(require_api_token)],
     responses={
         401: {"model": APIErrorEnvelope},
         404: {"model": APIErrorEnvelope},
@@ -73,7 +63,7 @@ def _report_entries(request: Request) -> tuple[list[tuple[str, BenchmarkReport]]
         try:
             contents = path.read_bytes()
             report = BenchmarkReport.model_validate_json(contents)
-        except (OSError, ValueError):
+        except OSError, ValueError:
             invalid_count += 1
             continue
         report_id = f"sha256:{hashlib.sha256(contents).hexdigest()}"
@@ -85,6 +75,7 @@ def _summary(report_id: str, report: BenchmarkReport) -> ReportSummary:
     return ReportSummary(
         report_id=report_id,
         recorded_at=report.recorded_at,
+        execution_status=report.execution_status,
         label=report.label,
         profile=report.profile,
         repetitions=report.repetitions,
@@ -99,9 +90,7 @@ def _summary(report_id: str, report: BenchmarkReport) -> ReportSummary:
 @router.get("/system", response_model=SystemEnvelope)
 def get_system(request: Request) -> SystemEnvelope:
     snapshot = system_snapshot(Path.home())
-    safe_system = SystemResponse.model_validate(
-        snapshot.model_dump(exclude={"python_executable"})
-    )
+    safe_system = SystemResponse.model_validate(snapshot.model_dump(exclude={"python_executable"}))
     adapters: list[GPUAdapterResponse] = []
     warnings: list[str] = []
     try:
@@ -170,15 +159,12 @@ def get_reports(
     entries, invalid_count = _report_entries(request)
     return ReportPage(
         reports=[
-            _summary(report_id, report)
-            for report_id, report in entries[offset : offset + limit]
+            _summary(report_id, report) for report_id, report in entries[offset : offset + limit]
         ],
         offset=offset,
         limit=limit,
         total=len(entries),
-        warnings=(
-            ["Des archives JSON illisibles ont été ignorées."] if invalid_count else []
-        ),
+        warnings=(["Des archives JSON illisibles ont été ignorées."] if invalid_count else []),
     )
 
 
@@ -229,9 +215,7 @@ def get_report(report_id: str, request: Request) -> ReportDetailResponse:
                         limitations=BENCHMARK_DOCUMENTATION[result.benchmark_id].limitations,
                         references=[
                             REFERENCE_LIBRARY[item]
-                            for item in BENCHMARK_DOCUMENTATION[
-                                result.benchmark_id
-                            ].reference_ids
+                            for item in BENCHMARK_DOCUMENTATION[result.benchmark_id].reference_ids
                         ],
                     )
                     for result in report.results

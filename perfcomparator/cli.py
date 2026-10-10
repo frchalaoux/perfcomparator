@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import json
+import os
+import shutil
 import subprocess
 import sys
 import webbrowser
@@ -49,9 +51,8 @@ app = typer.Typer(
 )
 engine_app = typer.Typer(no_args_is_help=True, help="Gère le serveur PerfComparator Engine.")
 web_app = typer.Typer(
-    no_args_is_help=False,
-    invoke_without_command=True,
-    help="Gère les serveurs locaux PCE et PCWEB.",
+    no_args_is_help=True,
+    help="Gère PCWEB ; `web start` conserve le lancement groupé historique.",
 )
 
 
@@ -77,14 +78,30 @@ def main(
 
 
 def _run_pcweb(command: str, *arguments: str) -> None:
-    try:
-        subprocess.run(
-            [sys.executable, "-m", "perfcomparatorweb.cli", command, *arguments],
-            check=True,
+    web_cli = shutil.which("perfcomparatorweb")
+    if web_cli is None:
+        web_project = Path(__file__).resolve().parents[2] / "perfcomparator-web"
+        executable_name = "perfcomparatorweb.exe" if os.name == "nt" else "perfcomparatorweb"
+        web_cli_candidate = (
+            web_project
+            / ".venv"
+            / ("Scripts" if os.name == "nt" else "bin")
+            / executable_name
         )
+        if web_cli_candidate.is_file():
+            web_cli = str(web_cli_candidate)
+
+    command_line = (
+        [web_cli, command, *arguments]
+        if web_cli
+        else [sys.executable, "-m", "perfcomparatorweb.cli", command, *arguments]
+    )
+    try:
+        subprocess.run(command_line, check=True)
     except (OSError, subprocess.CalledProcessError) as error:
         raise RuntimeError(
-            "La commande PCWEB a échoué. Vérifiez que le paquet perfcomparatorweb est installé."
+            "La commande PCWEB a échoué. Vérifiez que perfcomparatorweb est installé, "
+            "ou que son dépôt voisin possède un environnement .venv prêt."
         ) from error
 
 
@@ -93,7 +110,7 @@ def engine_start() -> None:
     """Démarre PCE seul."""
     if not pce_process_manager.is_running() and pce_process_manager.web_is_running():
         typer.secho(
-            "PCWEB tourne sans moteur joignable. Arrêtez la paire avec `perfcomparator web stop`, "
+            "PCWEB tourne sans moteur joignable. Arrêtez PCWEB avec `perfcomparator web stop`, "
             "puis redémarrez PCE.",
             fg=typer.colors.YELLOW,
             err=True,
@@ -110,9 +127,13 @@ def engine_start() -> None:
 @engine_app.command("stop")
 def engine_stop() -> None:
     """Arrête PCE s'il n'est pas utilisé par PCWEB."""
+    _stop_engine()
+
+
+def _stop_engine() -> None:
     if pce_process_manager.web_is_running():
         typer.secho(
-            "PCWEB est encore actif. Arrêtez les deux avec `perfcomparator web stop`.",
+            "PCWEB est encore actif. Arrêtez-le avec `perfcomparator web stop` avant d'arrêter PCE.",
             fg=typer.colors.YELLOW,
             err=True,
         )
@@ -160,41 +181,30 @@ def _start_web_pair(no_open_browser: bool = False) -> None:
 
 
 @web_app.callback()
-def web_callback(
-    ctx: typer.Context,
-    no_open_browser: bool = typer.Option(False, "--no-open-browser"),
-) -> None:
-    if ctx.invoked_subcommand is None:
-        _start_web_pair(no_open_browser)
+def web_callback() -> None:
+    """Gère PCWEB seul ; PCE doit déjà fonctionner."""
 
 
 @web_app.command("start")
 def web_start(no_open_browser: bool = typer.Option(False, "--no-open-browser")) -> None:
-    """Démarre PCE et PCWEB."""
+    """Démarre PCE et PCWEB ensemble (alias historique de `perfcomparator start`)."""
     _start_web_pair(no_open_browser)
 
 
 @web_app.command("stop")
 def web_stop() -> None:
-    """Arrête PCWEB puis PCE."""
+    """Arrête PCWEB seul."""
     try:
         _run_pcweb("stop")
-        pce_process_manager.stop()
     except RuntimeError as error:
         typer.secho(str(error), fg=typer.colors.RED, err=True)
         raise typer.Exit(code=1) from error
-    typer.echo("PCWEB et PCE sont arrêtés.")
+    typer.echo("PCWEB est arrêté.")
 
 
 @web_app.command("status")
 def web_status() -> None:
-    """Affiche l'état de PCE et PCWEB."""
-    engine_state = pce_process_manager.read_state()
-    engine_up = pce_process_manager.is_running()
-    typer.echo(
-        f"PCE : {'actif' if engine_up else 'arrêté'}"
-        + (f" ({engine_state['url']})" if engine_up and engine_state else "")
-    )
+    """Affiche l'état de PCWEB."""
     try:
         _run_pcweb("status")
     except RuntimeError as error:
@@ -204,6 +214,24 @@ def web_status() -> None:
 
 app.add_typer(engine_app, name="engine")
 app.add_typer(web_app, name="web")
+
+
+@app.command("start")
+def start(no_open_browser: bool = typer.Option(False, "--no-open-browser")) -> None:
+    """Démarre PCE et PCWEB ensemble."""
+    _start_web_pair(no_open_browser)
+
+
+@app.command("stop")
+def stop() -> None:
+    """Arrête PCWEB puis PCE."""
+    try:
+        _run_pcweb("stop")
+        pce_process_manager.stop()
+    except RuntimeError as error:
+        typer.secho(str(error), fg=typer.colors.RED, err=True)
+        raise typer.Exit(code=1) from error
+    typer.echo("PCWEB et PCE sont arrêtés.")
 
 
 @app.command("desktop")
