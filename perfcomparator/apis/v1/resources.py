@@ -19,6 +19,7 @@ from perfcomparator.benchmarks import (
     PROFILES,
     REFERENCE_LIBRARY,
 )
+from perfcomparator.comparison import analyze_reports, parse_scenario_weights
 from perfcomparator.gpu_benchmarks import gpu_adapters
 from perfcomparator.models import BenchmarkReport
 from perfcomparator.system_info import system_snapshot
@@ -30,7 +31,11 @@ from .schemas import (
     BenchmarkGroup,
     BenchmarkProfileResponse,
     BenchmarkSummary,
+    ComparisonMachineResponse,
+    ComparisonMetricResponse,
     GPUAdapterResponse,
+    ReportComparisonRequest,
+    ReportComparisonResponse,
     ReportDetailResponse,
     ReportFailureResponse,
     ReportPage,
@@ -232,3 +237,79 @@ def get_report(report_id: str, request: Request) -> ReportDetailResponse:
                 ],
             )
     raise HTTPException(status_code=404, detail="report_not_found")
+
+
+@router.post("/reports/compare", response_model=ReportComparisonResponse)
+def compare_reports(body: ReportComparisonRequest, request: Request) -> ReportComparisonResponse:
+    if len(set(body.report_ids)) != len(body.report_ids):
+        raise HTTPException(status_code=422, detail="comparison_rejected")
+    if body.reference_report_id not in body.report_ids:
+        raise HTTPException(status_code=422, detail="comparison_rejected")
+    if any(re.fullmatch(r"sha256:[0-9a-f]{64}", item) is None for item in body.report_ids):
+        raise HTTPException(status_code=404, detail="report_not_found")
+
+    entries, _ = _report_entries(request)
+    reports_by_id = dict(entries)
+    if any(report_id not in reports_by_id for report_id in body.report_ids):
+        raise HTTPException(status_code=404, detail="report_not_found")
+
+    ordered_ids = [body.reference_report_id] + [
+        report_id for report_id in body.report_ids if report_id != body.reference_report_id
+    ]
+    reports = [reports_by_id[report_id] for report_id in ordered_ids]
+    try:
+        analysis = analyze_reports(reports, parse_scenario_weights(None))
+    except ValueError as error:
+        raise HTTPException(status_code=422, detail="comparison_rejected") from error
+
+    machines = []
+    for report_id, machine in zip(ordered_ids, analysis.machines, strict=True):
+        report = machine.report
+        machines.append(
+            ComparisonMachineResponse(
+                report_id=report_id,
+                label=machine.label,
+                recorded_at=report.recorded_at,
+                profile=report.profile,
+                system=ReportSystemResponse(
+                    system=report.system.system,
+                    release=report.system.release,
+                    machine=report.system.machine,
+                    model=report.system.model,
+                    manufacturer=report.system.manufacturer,
+                    product_name=report.system.product_name,
+                    processor=report.system.processor,
+                    physical_cpu_count=report.system.physical_cpu_count,
+                    logical_cpu_count=report.system.logical_cpu_count,
+                    memory_bytes=report.system.memory_bytes,
+                    gpu_devices=report.system.gpu_devices,
+                ),
+                overall_index=machine.overall_index,
+                categories=machine.categories,
+                scenarios=machine.scenarios,
+                narrative=machine.narrative,
+                metrics={
+                    benchmark_id: ComparisonMetricResponse(
+                        benchmark_id=metric.benchmark_id,
+                        name=metric.name,
+                        group=metric.group,
+                        value=metric.value,
+                        unit=metric.unit,
+                        index=metric.index,
+                        difference_percent=metric.difference_percent,
+                        conclusion=metric.conclusion,
+                        uncertainty=metric.uncertainty,
+                        spread_percent=metric.spread_percent,
+                    )
+                    for benchmark_id, metric in machine.metrics.items()
+                },
+            )
+        )
+    return ReportComparisonResponse(
+        baseline_report_id=body.reference_report_id,
+        baseline_label=analysis.baseline_label,
+        common_benchmarks=list(analysis.common_benchmarks),
+        scenario_weights=analysis.scenario_weights,
+        warnings=list(analysis.warnings),
+        machines=machines,
+    )

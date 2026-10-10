@@ -56,6 +56,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 "idempotency_conflict",
                 "Cette clé a déjà été utilisée pour une autre demande.",
             ),
+            "comparison_rejected": (
+                "comparison_rejected",
+                "Ces rapports ne sont pas compatibles ou ne partagent aucun benchmark.",
+            ),
         }
         if error.status_code == 404:
             default_error = ("not_found", "Cette ressource n’existe pas.")

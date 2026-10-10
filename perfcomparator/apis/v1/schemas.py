@@ -156,6 +156,46 @@ class ReportDetailResponse(ReportSummary):
     failures: list[ReportFailureResponse]
 
 
+class ReportComparisonRequest(BaseModel):
+    report_ids: list[str] = Field(min_length=2, max_length=8)
+    reference_report_id: str
+
+
+class ComparisonMetricResponse(BaseModel):
+    benchmark_id: str
+    name: str
+    group: str
+    value: float
+    unit: str
+    index: float
+    difference_percent: float
+    conclusion: str
+    uncertainty: str
+    spread_percent: float | None
+
+
+class ComparisonMachineResponse(BaseModel):
+    report_id: str
+    label: str
+    recorded_at: datetime
+    profile: str
+    system: ReportSystemResponse
+    overall_index: float
+    categories: dict[str, float]
+    scenarios: dict[str, float]
+    narrative: str
+    metrics: dict[str, ComparisonMetricResponse]
+
+
+class ReportComparisonResponse(BaseModel):
+    baseline_report_id: str
+    baseline_label: str
+    common_benchmarks: list[str]
+    scenario_weights: dict[str, float]
+    warnings: list[str]
+    machines: list[ComparisonMachineResponse]
+
+
 class CampaignTaskResponse(BaseModel):
     task_id: str
     request: CampaignRequest
