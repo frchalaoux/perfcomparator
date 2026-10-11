@@ -14,6 +14,7 @@ from starlette.middleware.trustedhost import TrustedHostMiddleware
 
 from .apis.base import api_router
 from .core.config import Settings
+from .core.machine_metadata import MachineMetadataStore
 from .executor import LocalBenchmarkExecutor
 from .repository import JsonReportRepository
 from .tasks import CampaignOrchestrator, CampaignTaskStore
@@ -22,11 +23,15 @@ from .tasks import CampaignOrchestrator, CampaignTaskStore
 def create_app(settings: Settings | None = None) -> FastAPI:
     resolved = settings or Settings.from_environment()
     task_store = CampaignTaskStore(resolved.state_dir / "campaigns.sqlite3")
+    machine_metadata = MachineMetadataStore(resolved.state_dir / "machine-metadata.json")
     reports = JsonReportRepository(resolved.reports_dir)
     campaigns = CampaignOrchestrator(
         task_store,
         reports,
-        LocalBenchmarkExecutor(work_dir=resolved.state_dir / "work"),
+        LocalBenchmarkExecutor(
+            work_dir=resolved.state_dir / "work",
+            machine_metadata=machine_metadata,
+        ),
     )
 
     @asynccontextmanager
@@ -39,6 +44,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app = FastAPI(title="PerfComparator Engine", version="1", lifespan=lifespan)
     app.add_middleware(TrustedHostMiddleware, allowed_hosts=["127.0.0.1", "localhost"])
     app.state.settings = resolved
+    app.state.machine_metadata = machine_metadata
     app.state.reports = reports
     app.state.task_store = task_store
     app.state.campaigns = campaigns

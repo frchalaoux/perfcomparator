@@ -16,6 +16,7 @@ from pathlib import Path
 import psutil
 
 from .apple_models import apple_model_year
+from .core.machine_metadata import MachineMetadataOverride
 from .models import EnvironmentSnapshot, ProcessLoad, ReadinessSnapshot, SystemSnapshot
 
 
@@ -213,20 +214,32 @@ def _gpu_devices() -> list[str]:
     ]
 
 
-def system_snapshot(work_dir: Path | str = ".") -> SystemSnapshot:
+def system_snapshot(
+    work_dir: Path | str = ".",
+    *,
+    machine_metadata: MachineMetadataOverride | None = None,
+) -> SystemSnapshot:
     """Capture le matériel, l'OS et l'interpréteur utilisés pour le rapport."""
     usage = shutil.disk_usage(Path(work_dir).resolve())
     identity = _machine_identity()
+    model = machine_metadata.model if machine_metadata else identity.model_identifier
+    product_sku = (
+        machine_metadata.product_sku if machine_metadata else identity.product_sku
+    )
     return SystemSnapshot(
         system=platform.system(),
         release=platform.release(),
         version=platform.version(),
         machine=platform.machine(),
-        model=identity.model_identifier,
+        model=model,
         manufacturer=identity.manufacturer,
         product_name=identity.product_name,
-        model_year=apple_model_year(identity.model_identifier, identity.product_sku),
-        product_sku=identity.product_sku,
+        model_year=(
+            machine_metadata.model_year
+            if machine_metadata and machine_metadata.model_year is not None
+            else apple_model_year(model, product_sku)
+        ),
+        product_sku=product_sku,
         processor=_processor(),
         physical_cpu_count=_physical_cpu_count(),
         logical_cpu_count=os.cpu_count() or 1,

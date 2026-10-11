@@ -9,6 +9,7 @@ from dataclasses import asdict
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from fastapi.responses import HTMLResponse
 
 from perfcomparator.apis.security import require_api_token
 from perfcomparator.benchmarks import (
@@ -20,7 +21,9 @@ from perfcomparator.benchmarks import (
     REFERENCE_LIBRARY,
 )
 from perfcomparator.comparison import analyze_reports, parse_scenario_weights
+from perfcomparator.core.machine_metadata import MachineMetadataOverride
 from perfcomparator.gpu_benchmarks import gpu_adapters
+from perfcomparator.html_report import render_html
 from perfcomparator.models import BenchmarkReport
 from perfcomparator.system_info import system_snapshot
 
@@ -38,6 +41,8 @@ from .schemas import (
     ReportComparisonResponse,
     ReportDetailResponse,
     ReportFailureResponse,
+    ReportMachineMetadataUpdate,
+    ReportMachineMetadataUpdateResponse,
     ReportPage,
     ReportResultResponse,
     ReportSummary,
@@ -94,7 +99,10 @@ def _summary(report_id: str, report: BenchmarkReport) -> ReportSummary:
 
 @router.get("/system", response_model=SystemEnvelope)
 def get_system(request: Request) -> SystemEnvelope:
-    snapshot = system_snapshot(Path.home())
+    snapshot = system_snapshot(
+        Path.home(),
+        machine_metadata=request.app.state.machine_metadata.load(),
+    )
     safe_system = SystemResponse.model_validate(snapshot.model_dump(exclude={"python_executable"}))
     adapters: list[GPUAdapterResponse] = []
     warnings: list[str] = []
@@ -106,6 +114,15 @@ def get_system(request: Request) -> SystemEnvelope:
         if not adapters:
             warnings.append("Aucun adaptateur WebGPU compatible n’a été détecté.")
     return SystemEnvelope(system=safe_system, gpu_adapters=adapters, warnings=warnings)
+
+
+@router.patch("/system/machine", response_model=SystemEnvelope)
+def update_machine_metadata(
+    metadata: MachineMetadataOverride,
+    request: Request,
+) -> SystemEnvelope:
+    request.app.state.machine_metadata.save(metadata)
+    return get_system(request)
 
 
 @router.get("/benchmarks", response_model=BenchmarkCatalogResponse)
@@ -160,8 +177,26 @@ def get_reports(
     request: Request,
     offset: int = Query(default=0, ge=0),
     limit: int = Query(default=20, ge=1, le=100),
+    q: str = Query(default="", max_length=120),
 ) -> ReportPage:
     entries, invalid_count = _report_entries(request)
+    query = q.strip().casefold()
+    if query:
+        entries = [
+            (report_id, report)
+            for report_id, report in entries
+            if any(
+                query in value.casefold()
+                for value in (
+                    report.label or "",
+                    report.system.product_name or "",
+                    report.system.model or "",
+                    report.system.manufacturer or "",
+                    report.system.processor or "",
+                    report.system.machine or "",
+                )
+            )
+        ]
     return ReportPage(
         reports=[
             _summary(report_id, report) for report_id, report in entries[offset : offset + limit]
@@ -193,6 +228,8 @@ def get_report(report_id: str, request: Request) -> ReportDetailResponse:
                     release=report.system.release,
                     machine=report.system.machine,
                     model=report.system.model,
+                    model_year=report.system.model_year,
+                    product_sku=report.system.product_sku,
                     manufacturer=report.system.manufacturer,
                     product_name=report.system.product_name,
                     processor=report.system.processor,
@@ -200,6 +237,8 @@ def get_report(report_id: str, request: Request) -> ReportDetailResponse:
                     logical_cpu_count=report.system.logical_cpu_count,
                     memory_bytes=report.system.memory_bytes,
                     gpu_devices=report.system.gpu_devices,
+                    python_version=report.system.python_version,
+                    python_implementation=report.system.python_implementation,
                 ),
                 environment_warnings=report.environment_warnings,
                 results=[
@@ -236,6 +275,58 @@ def get_report(report_id: str, request: Request) -> ReportDetailResponse:
                     if failure.benchmark_id in CATALOG
                 ],
             )
+    raise HTTPException(status_code=404, detail="report_not_found")
+
+
+@router.patch(
+    "/reports/{report_id}/machine",
+    response_model=ReportMachineMetadataUpdateResponse,
+)
+def update_report_machine(
+    report_id: str,
+    body: ReportMachineMetadataUpdate,
+    request: Request,
+) -> ReportMachineMetadataUpdateResponse:
+    if re.fullmatch(r"sha256:[0-9a-f]{64}", report_id) is None:
+        raise HTTPException(status_code=404, detail="report_not_found")
+
+    root = request.app.state.reports.root
+    if not root.exists():
+        raise HTTPException(status_code=404, detail="report_not_found")
+    for path in sorted(root.glob("benchmark_*.json"), reverse=True):
+        try:
+            contents = path.read_bytes()
+            candidate_id = f"sha256:{hashlib.sha256(contents).hexdigest()}"
+            if not secrets.compare_digest(candidate_id, report_id):
+                continue
+            report = BenchmarkReport.model_validate_json(contents)
+        except (OSError, ValueError):
+            continue
+
+        model = body.model.strip()
+        if not model:
+            raise HTTPException(status_code=422, detail="model_required")
+        system = report.system.model_copy(
+            update={
+                "model": model,
+                "model_year": body.model_year,
+                "product_sku": body.product_sku,
+            }
+        )
+        updated = report.model_copy(update={"system": system})
+        serialized = updated.model_dump_json(indent=2).encode("utf-8")
+        temporary = path.with_name(f"{path.name}.edit.tmp")
+        try:
+            temporary.write_bytes(serialized)
+            temporary.replace(path)
+        finally:
+            temporary.unlink(missing_ok=True)
+        return ReportMachineMetadataUpdateResponse(
+            report_id=f"sha256:{hashlib.sha256(serialized).hexdigest()}",
+            model=model,
+            model_year=body.model_year,
+            product_sku=body.product_sku,
+        )
     raise HTTPException(status_code=404, detail="report_not_found")
 
 
@@ -276,6 +367,8 @@ def compare_reports(body: ReportComparisonRequest, request: Request) -> ReportCo
                     release=report.system.release,
                     machine=report.system.machine,
                     model=report.system.model,
+                    model_year=report.system.model_year,
+                    product_sku=report.system.product_sku,
                     manufacturer=report.system.manufacturer,
                     product_name=report.system.product_name,
                     processor=report.system.processor,
@@ -283,6 +376,8 @@ def compare_reports(body: ReportComparisonRequest, request: Request) -> ReportCo
                     logical_cpu_count=report.system.logical_cpu_count,
                     memory_bytes=report.system.memory_bytes,
                     gpu_devices=report.system.gpu_devices,
+                    python_version=report.system.python_version,
+                    python_implementation=report.system.python_implementation,
                 ),
                 overall_index=machine.overall_index,
                 categories=machine.categories,
@@ -313,3 +408,29 @@ def compare_reports(body: ReportComparisonRequest, request: Request) -> ReportCo
         warnings=list(analysis.warnings),
         machines=machines,
     )
+
+
+@router.post("/comparisons/export", response_class=HTMLResponse)
+def export_comparison(body: ReportComparisonRequest, request: Request) -> HTMLResponse:
+    if len(set(body.report_ids)) != len(body.report_ids):
+        raise HTTPException(status_code=422, detail="comparison_rejected")
+    if body.reference_report_id not in body.report_ids:
+        raise HTTPException(status_code=422, detail="comparison_rejected")
+    if any(re.fullmatch(r"sha256:[0-9a-f]{64}", item) is None for item in body.report_ids):
+        raise HTTPException(status_code=404, detail="report_not_found")
+
+    entries, _ = _report_entries(request)
+    reports_by_id = dict(entries)
+    if any(report_id not in reports_by_id for report_id in body.report_ids):
+        raise HTTPException(status_code=404, detail="report_not_found")
+    ordered_ids = [body.reference_report_id] + [
+        report_id for report_id in body.report_ids if report_id != body.reference_report_id
+    ]
+    try:
+        analysis = analyze_reports(
+            [reports_by_id[report_id] for report_id in ordered_ids],
+            parse_scenario_weights(None),
+        )
+    except ValueError as error:
+        raise HTTPException(status_code=422, detail="comparison_rejected") from error
+    return HTMLResponse(content=render_html(analysis))

@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from perfcomparator.models import CampaignRequest, ReadinessSnapshot
 from perfcomparator.tasks import CampaignTask, CampaignTaskEvent, TaskStatus
@@ -116,6 +116,8 @@ class ReportSystemResponse(BaseModel):
     release: str
     machine: str
     model: str
+    model_year: int | None
+    product_sku: str | None = None
     manufacturer: str | None
     product_name: str | None
     processor: str
@@ -123,6 +125,27 @@ class ReportSystemResponse(BaseModel):
     logical_cpu_count: int
     memory_bytes: int | None
     gpu_devices: list[str]
+    python_version: str
+    python_implementation: str
+
+
+class ReportMachineMetadataUpdate(BaseModel):
+    model: str = Field(min_length=1, max_length=200)
+    model_year: int | None = Field(default=None, ge=1984, le=2100)
+    product_sku: str | None = Field(default=None, max_length=100)
+
+    @field_validator("product_sku")
+    @classmethod
+    def normalize_product_sku(cls, value: str | None) -> str | None:
+        normalized = " ".join(value.split()) if value else ""
+        return normalized or None
+
+
+class ReportMachineMetadataUpdateResponse(BaseModel):
+    report_id: str
+    model: str
+    model_year: int | None
+    product_sku: str | None = None
 
 
 class ReportResultResponse(BaseModel):

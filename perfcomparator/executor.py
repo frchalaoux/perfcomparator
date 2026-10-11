@@ -11,6 +11,7 @@ from typing import Protocol
 
 from . import BENCHMARK_PROTOCOL_VERSION, __version__
 from .benchmarks import CATALOG, PROFILES, BenchmarkContext
+from .core.machine_metadata import MachineMetadataStore
 from .models import (
     BenchmarkFailure,
     BenchmarkReport,
@@ -71,11 +72,13 @@ class LocalBenchmarkExecutor:
         workers: int | None = None,
         gpu_index: int | None = None,
         readiness: ReadinessSnapshot | None = None,
+        machine_metadata: MachineMetadataStore | None = None,
     ) -> None:
         self.work_dir = Path(work_dir)
         self.workers = workers
         self.gpu_index = gpu_index
         self.readiness = readiness
+        self.machine_metadata = machine_metadata
 
     def execute(
         self,
@@ -158,7 +161,12 @@ class LocalBenchmarkExecutor:
             profile=request.profile,
             repetitions=request.repetitions,
             requested_benchmarks=request.benchmark_ids,
-            system=system_snapshot(work_dir),
+            system=system_snapshot(
+                work_dir,
+                machine_metadata=(
+                    self.machine_metadata.load() if self.machine_metadata else None
+                ),
+            ),
             environment_start=environment_start,
             environment_end=environment_end,
             environment_warnings=_environment_warnings(environment_start, environment_end),
