@@ -51,6 +51,7 @@ if "%~1"=="tool" if "%~2"=="dir" (
 if "%~1"=="tool" if "%~2"=="list" (
   if not exist "%FAKE_UV_LIST_MARKER%" (
     echo seen>"%FAKE_UV_LIST_MARKER%"
+    echo(
     echo warning: Ignoring malformed tool `perfcomparator-broken-ci` 1>&2
   ) else (
     echo No tools installed 1>&2
@@ -120,6 +121,9 @@ exit /b 9
         if ($installLog -notmatch [regex]::Escape($expectedLogEntry)) {
             throw "Installer log is missing expected entry: $expectedLogEntry"
         }
+    }
+    if ($installLog -notmatch '(?m)\[OUTPUT\] \r?$') {
+        throw "Installer log is missing the expected blank native-output line."
     }
 
     Write-Host "Installer smoke test passed under PowerShell $($PSVersionTable.PSVersion)."
