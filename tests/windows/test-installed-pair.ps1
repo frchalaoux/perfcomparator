@@ -55,9 +55,9 @@ $pcweb = Join-Path $env:UV_TOOL_BIN_DIR "perfcomparatorweb.exe"
 Invoke-Tool $pce @("web", "start", "--no-open-browser") | Write-Host
 $webState = Get-Content -LiteralPath (Join-Path $env:PERFCOMPARATOR_STATE_DIR "web.json") -Raw |
     ConvertFrom-Json
-$page = Invoke-WebRequest -Uri "$($webState.url)/" -UseBasicParsing -TimeoutSec 10
-if ($page.StatusCode -ne 200 -or $page.Content -notmatch "Moteur PCE") {
-    throw "The packaged PCWEB page did not show the PCE status."
+$page = Invoke-WebRequest -Uri "$($webState.url)/machine/inventory" -UseBasicParsing -TimeoutSec 10
+if ($page.StatusCode -ne 200 -or $page.Content -notmatch 'id="machine-title"') {
+    throw "The packaged PCWEB machine inventory endpoint did not return the system page."
 }
 Invoke-Tool $pce @("engine", "stop") -ExpectFailure | Out-Null
 Invoke-Tool $pce @("web", "stop") | Write-Host
