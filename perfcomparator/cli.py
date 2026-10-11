@@ -78,10 +78,13 @@ def main(
 
 
 def _run_pcweb(command: str, *arguments: str) -> None:
-    web_cli = shutil.which("perfcomparatorweb")
-    if web_cli is None:
+    executable_name = "perfcomparatorweb.exe" if os.name == "nt" else "perfcomparatorweb"
+    pce_executable = Path(sys.argv[0])
+    adjacent_web_cli = pce_executable.absolute().with_name(executable_name)
+    if adjacent_web_cli.is_file():
+        command_line = [str(adjacent_web_cli), command, *arguments]
+    else:
         web_project = Path(__file__).resolve().parents[2] / "perfcomparator-web"
-        executable_name = "perfcomparatorweb.exe" if os.name == "nt" else "perfcomparatorweb"
         web_cli_candidate = (
             web_project
             / ".venv"
@@ -89,13 +92,22 @@ def _run_pcweb(command: str, *arguments: str) -> None:
             / executable_name
         )
         if web_cli_candidate.is_file():
-            web_cli = str(web_cli_candidate)
+            command_line = [str(web_cli_candidate), command, *arguments]
+        else:
+            try:
+                from importlib.util import find_spec
 
-    command_line = (
-        [web_cli, command, *arguments]
-        if web_cli
-        else [sys.executable, "-m", "perfcomparatorweb.cli", command, *arguments]
-    )
+                pcweb_is_installed_here = find_spec("perfcomparatorweb") is not None
+            except (ImportError, ValueError):
+                pcweb_is_installed_here = False
+
+            web_cli = shutil.which(executable_name)
+            if pcweb_is_installed_here:
+                command_line = [sys.executable, "-m", "perfcomparatorweb.cli", command, *arguments]
+            elif web_cli:
+                command_line = [web_cli, command, *arguments]
+            else:
+                command_line = [sys.executable, "-m", "perfcomparatorweb.cli", command, *arguments]
     try:
         subprocess.run(command_line, check=True)
     except (OSError, subprocess.CalledProcessError) as error:
