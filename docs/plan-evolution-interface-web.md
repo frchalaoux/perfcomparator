@@ -6,14 +6,49 @@ Ce document décrit l’évolution envisagée de PerfComparator vers deux
 composants FastAPI locaux : **PerfComparator Engine (PCE)**, qui accède au
 matériel et exécute les mesures, et **PerfComparator Web (PCWEB)**, qui sert
 l’interface navigateur et appelle PCE. La CLI reste une interface prise en
-charge par le même cœur métier. Ce document constitue un plan de réalisation ;
-il ne décrit pas une fonctionnalité déjà disponible.
+charge par le même cœur métier. Ce document décrit l’architecture cible et
+l’ordre de réalisation ; l’état des phases est précisé ci-dessous.
 
-Le premier socle de code est maintenant présent dans les deux dépôts locaux :
-chaque service expose son état de santé, PCWEB le consulte par HTTP authentifié,
-et les commandes de gestion lancent ou arrêtent les processus. La page Web est
-encore un diagnostic de connexion ; les parcours de mesure, d’historique et de
-rapport restent à implémenter dans les phases 1 et 2.
+Le socle comprend désormais les deux services, leurs commandes de gestion, le
+catalogue et les informations machine dans PCWEB, le parcours de campagne avec
+contrôle préalable et progression, ainsi que la consultation des rapports.
+Les smoke tests locaux des paquets macOS et Linux sont passés. La première
+tranche de comparaison PCWEB — route PCE, sélection des rapports et affichage —
+est implémentée et vérifiée par tests ciblés et smoke navigateur. Les contrôles
+sur les références GitHub exactes resteront à faire par le workflow de
+publication.
+
+## Séquence décidée avant le chantier des agents
+
+Le mode local PCE/PCWEB sera rendu utilisable et vérifié sur macOS et Linux
+avant de commencer l’implémentation des agents. L’agent ne remplace pas
+l’interface de comparaison : il permettra de recueillir à distance les mesures
+et rapports que PCWEB devra ensuite présenter.
+
+Ordre de réalisation convenu :
+
+1. Terminer et vérifier dans le navigateur la sélection « Tous les benchmarks »
+   (tout sélectionner, tout désélectionner et état partiel), puis conserver ses
+   tests ciblés.
+2. Fiabiliser et tester les installateurs macOS et Linux sur les paquets
+   construits. Des archives locales suivant la structure du workflow ont été
+   installées dans des environnements isolés avec les roues PCE et PCWEB
+   construites localement. Sur macOS et Ubuntu, le smoke test a validé les pages,
+   le démarrage groupé et le démarrage/arrêt séparé des serveurs. Le parcours
+   campagne → rapport fonctionne aussi depuis les checkouts macOS. Avant une
+   publication, le workflow devra encore valider les sources récupérées depuis
+   leurs références GitHub exactes.
+3. Réaliser la comparaison dans PCWEB : choisir plusieurs rapports, afficher
+   leurs machines côte à côte, désigner une référence et consulter les scores
+   comparés. PCE reste la source de vérité pour les règles et calculs de
+   comparaison.
+4. Ouvrir ensuite la phase d’étude et d’implémentation des agents, en réutilisant
+   le contrat des campagnes et les rapports déjà comparables.
+
+Windows reste à arbitrer séparément. Tant que les installateurs Windows sont
+présentés comme pris en charge, leur fonctionnement doit être corrigé avant une
+publication qui promet cette plateforme ; cela ne bloque pas les validations
+locales macOS/Linux ni la préparation de l’architecture d’agents.
 
 Le premier incrément installe et lance PCE et PCWEB sur la machine à mesurer.
 Les deux services n’écoutent que sur la boucle locale. Le navigateur parle à
@@ -235,23 +270,25 @@ d’un CDN. Toutes ses ressources sont servies par PCWEB.
 Commandes cibles :
 
 ```bash
-perfcomparator web start
-perfcomparator web stop
-perfcomparator web status
+perfcomparator start
+perfcomparator stop
 perfcomparator engine start
 perfcomparator engine stop
 perfcomparator engine status
+perfcomparator web start
+perfcomparator web stop
+perfcomparator web status
 perfcomparatorweb start
 perfcomparatorweb stop
 perfcomparatorweb status
 ```
 
-`perfcomparator web start` lance PCE puis PCWEB en arrière-plan, vérifie leur
-disponibilité, puis ouvre l’interface servie par PCWEB. `perfcomparator web`
-sans sous-commande est son raccourci. `perfcomparator web stop` arrête PCWEB
-puis PCE ; `status` affiche l’état des deux. Les commandes `engine` et
-`perfcomparatorweb` gèrent chaque composant séparément. Le lancement de PCWEB
-seul requiert l’URL PCE et son secret local.
+`perfcomparator start` lance PCE puis PCWEB en arrière-plan, vérifie leur
+disponibilité, puis ouvre l’interface servie par PCWEB. `perfcomparator stop`
+arrête PCWEB puis PCE. Les commandes `engine` gèrent PCE seul ; les commandes
+`web stop/status` et `perfcomparatorweb` gèrent PCWEB seul. `perfcomparator web
+start` reste un alias historique du démarrage groupé. Le démarrage séparé de
+PCWEB requiert PCE déjà actif ainsi que son URL et son secret local.
 
 Les commandes distinctes ci-dessus permettent aussi de démarrer et d’arrêter
 PCE ou PCWEB individuellement, notamment pour le développement et le
@@ -774,10 +811,19 @@ rapport atomique compatible avec la CLI.
 
 ### Phase 3 — gestion des rapports et comparaison
 
+La première tranche locale est en place : PCE expose son moteur de comparaison
+à PCWEB, qui permet de sélectionner plusieurs rapports et une référence puis
+affiche les machines et les benchmarks communs. Les pondérations, l’export, le
+téléchargement et la suppression restent à réaliser.
+
 Livrables :
 
 - recherche, tri et pagination ;
-- sélection multiple et référence ;
+- sélection de plusieurs rapports de machines, affichage côte à côte et choix
+  d’un rapport de référence ;
+- API PCE `POST /api/v1/reports/compare` recevant 2 à 8 identifiants de rapports
+  et l’identifiant du rapport de référence ; les calculs réutilisent le moteur
+  de comparaison déjà appelé par la CLI, PCWEB ne fait que les présenter ;
 - pondérations de scénarios ;
 - génération HTML autonome ;
 - téléchargement ;
@@ -851,6 +897,10 @@ et implémente le transport agent ↔ serveur, l’enrôlement et la révocation
 identités, l’authentification mutuelle, les reconnexions, la compatibilité des
 versions, les limites de ressources et les règles de transfert et de rétention
 des données. Le résultat de l’étude peut aussi être de ne rien construire.
+
+Conformément à la séquence décidée ci-dessus, cette phase ne commence qu’après
+validation des parcours installés macOS/Linux et livraison de la comparaison
+PCWEB des rapports de machines.
 
 La frontière locale définie en phase 0 doit permettre cette évolution sans
 modifier le cœur de benchmark ni les contrats présentés au navigateur. Toute

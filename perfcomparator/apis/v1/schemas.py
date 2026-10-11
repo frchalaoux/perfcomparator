@@ -3,8 +3,12 @@
 from __future__ import annotations
 
 from datetime import datetime
+from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
+
+from perfcomparator.models import CampaignRequest, ReadinessSnapshot
+from perfcomparator.tasks import CampaignTask, CampaignTaskEvent, TaskStatus
 
 
 class GPUAdapterResponse(BaseModel):
@@ -88,6 +92,7 @@ class BenchmarkCatalogResponse(BaseModel):
 class ReportSummary(BaseModel):
     report_id: str
     recorded_at: datetime
+    execution_status: Literal["completed", "cancelled"]
     label: str | None
     profile: str
     repetitions: int
@@ -111,6 +116,8 @@ class ReportSystemResponse(BaseModel):
     release: str
     machine: str
     model: str
+    model_year: int | None
+    product_sku: str | None = None
     manufacturer: str | None
     product_name: str | None
     processor: str
@@ -118,6 +125,27 @@ class ReportSystemResponse(BaseModel):
     logical_cpu_count: int
     memory_bytes: int | None
     gpu_devices: list[str]
+    python_version: str
+    python_implementation: str
+
+
+class ReportMachineMetadataUpdate(BaseModel):
+    model: str = Field(min_length=1, max_length=200)
+    model_year: int | None = Field(default=None, ge=1984, le=2100)
+    product_sku: str | None = Field(default=None, max_length=100)
+
+    @field_validator("product_sku")
+    @classmethod
+    def normalize_product_sku(cls, value: str | None) -> str | None:
+        normalized = " ".join(value.split()) if value else ""
+        return normalized or None
+
+
+class ReportMachineMetadataUpdateResponse(BaseModel):
+    report_id: str
+    model: str
+    model_year: int | None
+    product_sku: str | None = None
 
 
 class ReportResultResponse(BaseModel):
@@ -149,3 +177,119 @@ class ReportDetailResponse(ReportSummary):
     environment_warnings: list[str]
     results: list[ReportResultResponse]
     failures: list[ReportFailureResponse]
+
+
+class ReportComparisonRequest(BaseModel):
+    report_ids: list[str] = Field(min_length=2, max_length=8)
+    reference_report_id: str
+
+
+class ComparisonMetricResponse(BaseModel):
+    benchmark_id: str
+    name: str
+    group: str
+    value: float
+    unit: str
+    index: float
+    difference_percent: float
+    conclusion: str
+    uncertainty: str
+    spread_percent: float | None
+
+
+class ComparisonMachineResponse(BaseModel):
+    report_id: str
+    label: str
+    recorded_at: datetime
+    profile: str
+    system: ReportSystemResponse
+    overall_index: float
+    categories: dict[str, float]
+    scenarios: dict[str, float]
+    narrative: str
+    metrics: dict[str, ComparisonMetricResponse]
+
+
+class ReportComparisonResponse(BaseModel):
+    baseline_report_id: str
+    baseline_label: str
+    common_benchmarks: list[str]
+    scenario_weights: dict[str, float]
+    warnings: list[str]
+    machines: list[ComparisonMachineResponse]
+
+
+class CampaignTaskResponse(BaseModel):
+    task_id: str
+    request: CampaignRequest
+    status: TaskStatus
+    created_at: datetime
+    started_at: datetime | None
+    finished_at: datetime | None
+    current_benchmark: str | None
+    completed_benchmarks: int
+    total_benchmarks: int
+    report_id: str | None
+    error_code: str | None
+
+    @classmethod
+    def from_task(cls, task: CampaignTask) -> CampaignTaskResponse:
+        return cls.model_validate(task.model_dump())
+
+
+class CampaignSubmissionResponse(BaseModel):
+    task: CampaignTaskResponse
+    created: bool
+
+
+class CampaignCancellationResponse(BaseModel):
+    task: CampaignTaskResponse
+    cancellation_requested: bool
+
+
+class CampaignEventResponse(BaseModel):
+    sequence: int
+    occurred_at: datetime
+    event_type: str
+    payload: dict[str, str | int | float | bool | None]
+
+    @classmethod
+    def from_event(cls, event: CampaignTaskEvent) -> CampaignEventResponse:
+        return cls.model_validate(event.model_dump())
+
+
+class ReadinessProcessResponse(BaseModel):
+    name: str
+    cpu_percent: float
+    memory_percent: float
+
+
+class CampaignReadinessResponse(BaseModel):
+    sample_seconds: float
+    cpu_percent: float
+    memory_available_percent: float
+    memory_available_bytes: int
+    swap_percent: float
+    active_processes: list[ReadinessProcessResponse]
+    warnings: list[str]
+    suitable: bool
+
+    @classmethod
+    def from_snapshot(cls, snapshot: ReadinessSnapshot) -> CampaignReadinessResponse:
+        return cls(
+            sample_seconds=snapshot.sample_seconds,
+            cpu_percent=snapshot.cpu_percent,
+            memory_available_percent=snapshot.memory_available_percent,
+            memory_available_bytes=snapshot.memory_available_bytes,
+            swap_percent=snapshot.swap_percent,
+            active_processes=[
+                ReadinessProcessResponse(
+                    name=process.name,
+                    cpu_percent=process.cpu_percent,
+                    memory_percent=process.memory_percent,
+                )
+                for process in snapshot.active_processes
+            ],
+            warnings=snapshot.warnings,
+            suitable=snapshot.suitable,
+        )

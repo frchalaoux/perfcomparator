@@ -31,6 +31,7 @@ class GpuAdapterSummary:
     adapter_type: str
 
 
+@cache
 def gpu_adapters() -> tuple[GpuAdapterSummary, ...]:
     """Liste les adaptateurs WebGPU dans l'ordre exposé par wgpu."""
     summaries = []

@@ -93,7 +93,10 @@ perfcomparator compare premier-rapport.json second-rapport.json --html comparais
 Le premier rapport sert de référence. Les mesures doivent utiliser des versions
 de protocole et des profils compatibles pour que la comparaison soit
 pertinente. La CLI fonctionne aussi sur un serveur sans bureau graphique.
-L'interface Web peut être ouverte depuis un terminal avec `perfcomparator web`.
+Les deux serveurs locaux se démarrent avec `perfcomparator start` et s'arrêtent
+avec `perfcomparator stop`. Les commandes `perfcomparator engine` et
+`perfcomparator web stop|status` pilotent séparément PCE et PCWEB ;
+`perfcomparator web start` reste un alias historique pour le démarrage groupé.
 `perfcomparator --help` liste les autres commandes.
 
 ## Publier, télécharger et comparer un rapport

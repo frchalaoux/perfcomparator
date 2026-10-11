@@ -1,6 +1,6 @@
 #!/bin/sh
 # Installe PerfComparator pour le compte courant (macOS ou Linux).
-# Python n'a pas besoin d'être déjà installé : uv gère la version reproductible.
+# Réutilise CPython 3.14.4 s'il existe ; sinon uv installe cette version.
 set -eu
 
 release_version="${PERFCOMPARATOR_VERSION:-${BENCHMARK_MAC_VERSION:-v0.5.0}}"
@@ -53,27 +53,35 @@ if [ ! -x "$uv_command" ] && ! command -v "$uv_command" >/dev/null 2>&1; then
     exit 1
 fi
 
-echo "Installation de CPython ${python_version} gere par uv..."
-if ! "$uv_command" python install "$python_version"; then
-    echo "La version actuelle de uv ne trouve pas CPython ${python_version}."
-    echo "Mise a niveau de uv depuis l'installateur officiel, puis nouvelle tentative..."
-    if command -v curl >/dev/null 2>&1; then
-        curl -LsSf https://astral.sh/uv/install.sh | sh
-    elif command -v wget >/dev/null 2>&1; then
-        wget -qO- https://astral.sh/uv/install.sh | sh
-    else
-        echo "Erreur : curl ou wget est necessaire pour mettre uv a niveau." >&2
-        exit 1
+python_executable=$("$uv_command" python find --no-project --no-managed-python \
+    "$python_version" 2>/dev/null || true)
+if [ -n "$python_executable" ]; then
+    echo "Réutilisation de CPython ${python_version} : ${python_executable}"
+    set -- --python "$python_executable"
+else
+    echo "Installation de CPython ${python_version} gere par uv..."
+    if ! "$uv_command" python install "$python_version" --no-bin; then
+        echo "La version actuelle de uv ne trouve pas CPython ${python_version}."
+        echo "Mise a niveau de uv depuis l'installateur officiel, puis nouvelle tentative..."
+        if command -v curl >/dev/null 2>&1; then
+            curl -LsSf https://astral.sh/uv/install.sh | sh
+        elif command -v wget >/dev/null 2>&1; then
+            wget -qO- https://astral.sh/uv/install.sh | sh
+        else
+            echo "Erreur : curl ou wget est necessaire pour mettre uv a niveau." >&2
+            exit 1
+        fi
+        uv_command="$HOME/.local/bin/uv"
+        if [ ! -x "$uv_command" ]; then
+            echo "Erreur : la version mise a niveau de uv est introuvable." >&2
+            exit 1
+        fi
+        if ! "$uv_command" python install "$python_version" --no-bin; then
+            echo "Erreur : CPython ${python_version} reste indisponible apres la mise a niveau de uv." >&2
+            exit 1
+        fi
     fi
-    uv_command="$HOME/.local/bin/uv"
-    if [ ! -x "$uv_command" ]; then
-        echo "Erreur : la version mise a niveau de uv est introuvable." >&2
-        exit 1
-    fi
-    if ! "$uv_command" python install "$python_version"; then
-        echo "Erreur : CPython ${python_version} reste indisponible apres la mise a niveau de uv." >&2
-        exit 1
-    fi
+    set -- --managed-python --python "$python_version"
 fi
 legacy_tool_installed=false
 if "$uv_command" tool list 2>/dev/null | grep -q '^benchmark-mac v'; then
@@ -85,11 +93,11 @@ if [ "$legacy_tool_installed" = true ]; then
 fi
 echo "Installation de PerfComparator ${release_version}..."
 if [ -n "$web_source_url" ]; then
-    "$uv_command" tool install --managed-python --python "$python_version" \
+    "$uv_command" tool install "$@" \
         --with-executables-from "perfcomparatorweb @ $web_source_url" \
         --force --reinstall "$source_url"
 else
-    "$uv_command" tool install --managed-python --python "$python_version" --force --reinstall "$source_url"
+    "$uv_command" tool install "$@" --force --reinstall "$source_url"
 fi
 if [ -n "$web_source_version" ]; then
     echo "Version PCWEB installée : ${web_source_version}"
@@ -154,9 +162,9 @@ if [ -x "$perfcomparator_command" ] && [ -t 1 ]; then
 else
     echo
     if command -v perfcomparator >/dev/null 2>&1; then
-        echo "PerfComparator est installé. Lancez : perfcomparator web"
+        echo "PerfComparator est installé. Lancez : perfcomparator start"
     else
-        echo "PerfComparator est installé. Fermez et rouvrez le terminal, puis lancez : perfcomparator web"
+        echo "PerfComparator est installé. Fermez et rouvrez le terminal, puis lancez : perfcomparator start"
     fi
 fi
 

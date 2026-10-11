@@ -1,12 +1,18 @@
 # Guide développeur
 
+Pour comprendre les mots techniques employés dans le code et les plans, voir le
+[lexique technique PerfComparator](lexique-technique.md).
+
 Le paquet sépare les responsabilités :
 
 - `models.py` définit le schéma versionné des rapports ;
 - `system_info.py` collecte l'inventaire multiplateforme ;
 - `benchmarks.py` contient profils, catalogue et charges ;
 - `gpu_benchmarks.py` contient les pipelines WebGPU hors écran ;
-- `service.py` résout une sélection et isole les échecs ;
+- `executor.py` exécute une demande de campagne sur l'hôte local ;
+- `service.py` résout une sélection et conserve le rapport pour la CLI ;
+- `tasks.py` orchestre une campagne Web à la fois et persiste son état et ses
+  événements dans SQLite ;
 - `repository.py` persiste les rapports atomiquement ;
 - `comparison.py` calcule indices, scénarios, incertitudes et formulations ;
 - `html_report.py` produit un document autonome sans ressource distante ;
@@ -28,6 +34,10 @@ par `perfcomparator describe`.
 Ajouter ensuite sa `BenchmarkDefinition` à `DEFINITIONS`. Les groupes et le
 catalogue en découlent automatiquement. Toute évolution incompatible du JSON
 doit incrémenter `schema_version`.
+Le schéma privé 7 ajoute `execution_status` afin qu'un rapport partiel conservé
+après annulation soit explicite. L'export public doit refuser tout rapport dont
+cet état vaut `cancelled`. Cette métadonnée ne change pas les mesures ; les
+rapports des schémas 6 et 7 restent comparables.
 
 Trois versions ont des responsabilités distinctes dans un rapport :
 

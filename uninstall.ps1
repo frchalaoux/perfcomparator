@@ -55,7 +55,7 @@ if ((Test-Path -LiteralPath $perfComparatorCommand) -and
     $previousErrorActionPreference = $ErrorActionPreference
     try {
         $ErrorActionPreference = "Continue"
-        & $perfComparatorCommand web stop 2>&1 | ForEach-Object { Write-Host $_ }
+        & $perfComparatorCommand stop 2>&1 | ForEach-Object { Write-Host $_ }
         $stopExitCode = $LASTEXITCODE
     }
     finally {

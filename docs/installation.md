@@ -29,7 +29,7 @@ serveurs locaux et ouvre l'interface dans le navigateur.
 La commande `perfcomparator` est installée avec l'application, quel que soit le
 parcours choisi. Elle ne nécessite ni bureau graphique ni écran pour les
 commandes de diagnostic, de liste et les benchmarks CPU, mémoire ou stockage.
-`perfcomparator web` démarre PCE et PCWEB, puis ouvre l'interface Web dans le
+`perfcomparator start` démarre PCE et PCWEB, puis ouvre l'interface Web dans le
 navigateur. Cette commande et le raccourci graphique nécessitent un navigateur
 et une session utilisateur interactive. Sur macOS et Linux, lancez les
 commandes depuis Terminal ; sous Windows, depuis PowerShell ou l'invite de
@@ -84,7 +84,7 @@ perfcomparator history
 
 Les rapports sont enregistrés dans `data/results` sous le répertoire courant.
 Choisissez un répertoire persistant et accessible en écriture avant de lancer
-la campagne. N'exécutez pas `perfcomparator web` sur Server Core : cette
+la campagne. N'exécutez pas `perfcomparator start` sur Server Core : cette
 commande ouvre l'interface dans un navigateur et demande une session
 interactive. Microsoft décrit les différences entre
 [Server Core et Desktop Experience](https://learn.microsoft.com/en-us/windows-server/administration/server-core/what-is-server-core).
@@ -100,7 +100,7 @@ curl -LsSf https://raw.githubusercontent.com/frchalaoux/perfcomparator/v0.5.0/in
 
 L'installateur prépare `uv`, CPython 3.14.4, PCE et PCWEB. Aucun serveur
 d'affichage n'est nécessaire pour utiliser la CLI et lancer des campagnes. Pour
-ouvrir l'interface Web, utilisez `perfcomparator web` depuis une session
+ouvrir l'interface Web, utilisez `perfcomparator start` depuis une session
 disposant d'un navigateur ; les deux serveurs écoutent uniquement sur la machine
 locale.
 
@@ -234,7 +234,7 @@ fermez-le puis ouvrez-en un nouveau. Pour démarrer l'interface depuis un
 terminal (le navigateur s'ouvre automatiquement) :
 
 ```sh
-perfcomparator web
+perfcomparator start
 ```
 
 ## Aide au dépannage

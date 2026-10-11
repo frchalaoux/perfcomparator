@@ -37,7 +37,7 @@ suivantes.
 
 ### Parcours utilisateur
 
-1. L’utilisateur lance `perfcomparator web` depuis son environnement installé.
+1. L’utilisateur lance `perfcomparator start` depuis son environnement installé.
 2. Le lanceur démarre PCE et PCWEB, attend leurs états prêts, puis ouvre
    éventuellement le navigateur sur PCWEB.
 3. Le tableau de bord présente la machine mesurée, les capacités détectées et
@@ -51,9 +51,9 @@ suivantes.
 
 La phase n’ajoute ni lancement de campagne, ni suppression, ni comparaison,
 ni téléchargement HTML, ni export public. L’historique se limite aux champs
-utiles à son affichage : date, libellé, profil, machine, nombres de mesures et
-d’échecs, versions et ID. Les détails sensibles comme le chemin de l’exécutable
-Python ne sont pas affichés par défaut.
+utiles à son affichage : date, état d’exécution, libellé, profil, machine,
+nombres de mesures et d’échecs, versions et ID. Les détails sensibles comme le
+chemin de l’exécutable Python ne sont pas affichés par défaut.
 
 ### Responsabilités
 
@@ -255,13 +255,38 @@ encore de protocole réseau d’agent.
   les mesures nécessaires à l’équivalence des scores et exclure ces données
   locales sauf autorisation distincte.
 
-L’implémentation actuelle ne satisfait pas encore cette frontière :
-`BenchmarkService.run()` collecte directement readiness, environnement et
-inventaire système, puis écrit le rapport JSON et retourne son chemin. Avant de
-coder les campagnes, il faudra isoler la production du résultat de son
-archivage et faire dépendre l’orchestrateur de `BenchmarkExecutor`. Ce
-refactoring garde le worker local comme seul transporteur livré ; il ne demande
-ni service d’enrôlement, ni authentification distante, ni protocole agent.
+Le premier incrément de phase 2 isole cette frontière : `CampaignRequest` ne
+contient que le profil, les IDs de benchmarks, les répétitions et le libellé ;
+`BenchmarkExecutor` produit un `BenchmarkReport` sans l’archiver ;
+`LocalBenchmarkExecutor` encapsule les runners, les relevés système et les
+options propres à l’hôte. `BenchmarkService` résout la sélection, délègue
+l’exécution puis conserve le rapport dans le repository JSON. La CLI garde ainsi
+son chemin d’archivage et son format de rapport.
+
+Le second incrément ajoute `CampaignTaskStore` et `CampaignOrchestrator` : les
+tâches et leurs événements structurés sont persistés dans SQLite, avec une
+campagne active au maximum, reprise par clé d’idempotence, états interrompus au
+redémarrage et conservation des événements pendant 30 jours (1 000 par tâche
+au plus). Le worker utilise `BenchmarkExecutor`, puis archive le rapport JSON
+et conserve son identifiant SHA-256 opaque dans l’état de la tâche. L’annulation
+est coopérative entre répétitions ; les rapports privés portent désormais
+`execution_status` dans le schéma 7 et un rapport annulé n’est pas exportable
+publiquement.
+
+Les opérations de campagne sont exposées sous `/api/v1` : `POST /runs` crée ou
+reprend une demande avec `Idempotency-Key`, `GET /jobs/{id}` relit son état,
+`POST /jobs/{id}/cancel` demande son annulation et `GET /jobs/{id}/events`
+transmet les événements en SSE. La reprise accepte `Last-Event-ID` ou
+`after_sequence`; si une partie de l’historique a expiré, le flux émet un
+événement `resync` et le client doit relire l’état courant. Toutes ces routes
+exigent le jeton Bearer local. La réponse `409 engine_busy` inclut l’état
+minimal de la campagne active. L’API ne crée toujours aucun protocole d’agent.
+
+Le contrôle préalable `POST /api/v1/readiness` appelle `machine_readiness` sans
+créer de tâche. Il renvoie charge CPU, mémoire disponible, swap, processus
+pertinents, avertissements et verdict de convenance ; les PID sont omis de la
+réponse. Le contrôle est refusé avec `409 engine_busy` pendant une campagne
+afin de ne pas influencer les mesures.
 
 ### Écrans et retours d’état
 

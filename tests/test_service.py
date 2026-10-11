@@ -3,9 +3,15 @@ from test_repository import sample_report
 from perfcomparator import BENCHMARK_PROTOCOL_VERSION
 from perfcomparator import benchmarks as benchmark_module
 from perfcomparator.benchmarks import BenchmarkDefinition
-from perfcomparator.models import BenchmarkResult, EnvironmentSnapshot, ReadinessSnapshot
+from perfcomparator.executor import _environment_warnings
+from perfcomparator.models import (
+    BenchmarkResult,
+    CampaignRequest,
+    EnvironmentSnapshot,
+    ReadinessSnapshot,
+)
 from perfcomparator.repository import JsonReportRepository
-from perfcomparator.service import BenchmarkService, _environment_warnings
+from perfcomparator.service import BenchmarkService
 
 
 def test_service_aggregates_repetitions_with_the_median(tmp_path, monkeypatch) -> None:
@@ -27,7 +33,7 @@ def test_service_aggregates_repetitions_with_the_median(tmp_path, monkeypatch) -
     definition = BenchmarkDefinition("test.fake", "test", "Test", "Test", fake_runner)
     monkeypatch.setitem(benchmark_module.CATALOG, "test.fake", definition)
     monkeypatch.setattr(
-        "perfcomparator.service.system_snapshot", lambda _path: sample_report().system
+        "perfcomparator.executor.system_snapshot", lambda _path: sample_report().system
     )
 
     repository = JsonReportRepository(tmp_path / "results")
@@ -58,6 +64,52 @@ def test_service_aggregates_repetitions_with_the_median(tmp_path, monkeypatch) -
     assert report.readiness is not None
     assert report.readiness.suitable
     assert gpu_indices == [2, 2, 2]
+
+
+def test_service_passes_portable_request_to_executor_and_archives_its_report(tmp_path) -> None:
+    expected = sample_report(label="Campagne web")
+    calls = []
+
+    class FakeExecutor:
+        def execute(self, request, *, progress=None):
+            calls.append((request, progress))
+            return expected
+
+    repository = JsonReportRepository(tmp_path / "results")
+    callback = lambda *_: None
+    report, path = BenchmarkService(repository, executor=FakeExecutor()).run(
+        names=["cpu.integer"],
+        profile_name="quick",
+        label="Campagne web",
+        work_dir=tmp_path / "machine-specific-work-dir",
+        repetitions=2,
+        progress=callback,
+    )
+
+    request, received_progress = calls[0]
+    assert request == CampaignRequest(
+        profile="quick",
+        benchmark_ids=["cpu.integer"],
+        repetitions=2,
+        label="Campagne web",
+    )
+    assert set(request.model_dump()) == {"profile", "benchmark_ids", "repetitions", "label"}
+    assert received_progress is callback
+    assert report is expected
+    assert repository.load_path(path) == expected
+
+
+def test_campaign_request_rejects_machine_specific_fields() -> None:
+    import pytest
+    from pydantic import ValidationError
+
+    with pytest.raises(ValidationError):
+        CampaignRequest(
+            profile="quick",
+            benchmark_ids=["cpu.integer"],
+            repetitions=1,
+            work_dir="/machine/path",
+        )
 
 
 def test_environment_warnings_detect_battery_thermal_limit_and_temperature() -> None:

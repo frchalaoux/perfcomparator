@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 
 class SystemSnapshot(BaseModel):
@@ -62,6 +62,39 @@ class ReadinessSnapshot(BaseModel):
     suitable: bool = True
 
 
+class CampaignRequest(BaseModel):
+    """Choix de mesure portables, indépendants de l'hôte qui les exécute."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    profile: str = Field(min_length=1, max_length=32)
+    benchmark_ids: list[str] = Field(min_length=1, max_length=100)
+    repetitions: int = Field(ge=1, le=9)
+    label: str | None = Field(default=None, max_length=120)
+
+    @model_validator(mode="after")
+    def choices_must_exist_in_catalog(self) -> CampaignRequest:
+        from .benchmarks import CATALOG, PROFILES
+
+        if self.profile not in PROFILES:
+            raise ValueError(f"Profil inconnu : {self.profile}")
+        unknown = [
+            benchmark_id for benchmark_id in self.benchmark_ids if benchmark_id not in CATALOG
+        ]
+        if unknown:
+            raise ValueError(f"Benchmark inconnu : {unknown[0]}")
+        return self
+
+    @field_validator("benchmark_ids")
+    @classmethod
+    def benchmark_ids_must_be_unique(cls, value: list[str]) -> list[str]:
+        if any(not benchmark_id or len(benchmark_id) > 100 for benchmark_id in value):
+            raise ValueError("Chaque ID de benchmark doit contenir de 1 à 100 caractères.")
+        if len(value) != len(set(value)):
+            raise ValueError("La demande contient des IDs de benchmark en double.")
+        return value
+
+
 class BenchmarkResult(BaseModel):
     """Mesure principale normalisée d'un benchmark."""
 
@@ -94,7 +127,8 @@ class BenchmarkFailure(BaseModel):
 class BenchmarkReport(BaseModel):
     """Rapport complet, portable et comparable d'une exécution."""
 
-    schema_version: int = 6
+    schema_version: int = 7
+    execution_status: Literal["completed", "cancelled"] = "completed"
     suite_version: str
     protocol_version: str | None = None
     recorded_at: datetime
@@ -160,7 +194,7 @@ class PublicBenchmarkReport(BaseModel):
     report_id: str = Field(pattern=r"^sha256:[0-9a-f]{64}$")
     license: Literal["CC0-1.0"] = "CC0-1.0"
     verification: Literal["community-unverified"] = "community-unverified"
-    source_schema_version: Literal[3, 4, 5, 6] = 6
+    source_schema_version: Literal[3, 4, 5, 6, 7] = 7
     suite_version: str
     protocol_version: Literal["0.3.0"] = "0.3.0"
     profile: str

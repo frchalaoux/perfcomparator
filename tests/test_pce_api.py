@@ -15,7 +15,13 @@ API_TOKEN = "secret"
 
 def _client(reports_dir, *, token: str = API_TOKEN) -> TestClient:
     return TestClient(
-        create_app(Settings(api_token=token, reports_dir=reports_dir)),
+        create_app(
+            Settings(
+                api_token=token,
+                reports_dir=reports_dir,
+                state_dir=reports_dir / "state",
+            )
+        ),
         base_url="http://127.0.0.1",
     )
 
@@ -71,9 +77,9 @@ def _sample_report() -> BenchmarkReport:
     )
 
 
-def test_engine_health_requires_the_local_api_token() -> None:
+def test_engine_health_requires_the_local_api_token(tmp_path) -> None:
     with TestClient(
-        create_app(Settings(api_token="secret", control_token="admin")),
+        create_app(Settings(api_token="secret", control_token="admin", state_dir=tmp_path)),
         base_url="http://127.0.0.1",
     ) as client:
         assert client.get("/api/v1/health").status_code == 401
@@ -83,9 +89,9 @@ def test_engine_health_requires_the_local_api_token() -> None:
     assert response.json() == {"status": "ok", "component": "pce", "api_version": "v1"}
 
 
-def test_shutdown_requires_the_private_control_token() -> None:
+def test_shutdown_requires_the_private_control_token(tmp_path) -> None:
     with TestClient(
-        create_app(Settings(api_token="secret", control_token="admin")),
+        create_app(Settings(api_token="secret", control_token="admin", state_dir=tmp_path)),
         base_url="http://127.0.0.1",
     ) as client:
         assert client.post("/_control/shutdown").status_code == 403
@@ -98,9 +104,9 @@ def test_shutdown_requires_the_private_control_token() -> None:
     assert response.json() == {"status": "stopping"}
 
 
-def test_engine_rejects_an_untrusted_host() -> None:
+def test_engine_rejects_an_untrusted_host(tmp_path) -> None:
     with TestClient(
-        create_app(Settings(api_token="secret", control_token="admin")),
+        create_app(Settings(api_token="secret", control_token="admin", state_dir=tmp_path)),
         base_url="http://127.0.0.1",
     ) as client:
         response = client.get("/health", headers={"host": "example.com"})
@@ -231,3 +237,66 @@ def test_invalid_report_id_and_pagination_return_safe_errors(tmp_path) -> None:
     assert invalid_limit.status_code == 422
     assert invalid_limit.json()["error"]["code"] == "invalid_request"
     assert invalid_limit.headers["x-request-id"] == invalid_limit.json()["error"]["request_id"]
+
+
+def test_report_comparison_route_uses_selected_reference_and_cli_analysis(tmp_path) -> None:
+    repository = JsonReportRepository(tmp_path)
+    reference = _sample_report()
+    candidate_result = reference.results[0].model_copy(
+        update={
+            "value": 21.0,
+            "sample_values": [20.0, 21.0],
+            "minimum": 20.0,
+            "maximum": 22.0,
+        }
+    )
+    candidate = reference.model_copy(
+        update={
+            "label": "Machine candidate",
+            "recorded_at": datetime(2026, 10, 2, 12, tzinfo=UTC),
+            "results": [candidate_result],
+        }
+    )
+    reference_path = repository.save(reference)
+    candidate_path = repository.save(candidate)
+    reference_id = f"sha256:{hashlib.sha256(reference_path.read_bytes()).hexdigest()}"
+    candidate_id = f"sha256:{hashlib.sha256(candidate_path.read_bytes()).hexdigest()}"
+
+    with _client(tmp_path) as client:
+        response = client.post(
+            "/api/v1/reports/compare",
+            headers={"Authorization": f"Bearer {API_TOKEN}"},
+            json={
+                "report_ids": [candidate_id, reference_id],
+                "reference_report_id": reference_id,
+            },
+        )
+
+    assert response.status_code == 200
+    comparison = response.json()
+    assert comparison["baseline_report_id"] == reference_id
+    assert comparison["baseline_label"] == "Machine de test"
+    assert [machine["report_id"] for machine in comparison["machines"]] == [
+        reference_id,
+        candidate_id,
+    ]
+    assert comparison["machines"][0]["overall_index"] == 100
+    assert comparison["machines"][1]["overall_index"] == 200
+    assert comparison["machines"][1]["metrics"]["cpu.integer"]["difference_percent"] == 100
+    assert "cpu.integer" in comparison["common_benchmarks"]
+
+
+def test_report_comparison_route_requires_reference_to_be_selected(tmp_path) -> None:
+    with _client(tmp_path) as client:
+        response = client.post(
+            "/api/v1/reports/compare",
+            headers={"Authorization": f"Bearer {API_TOKEN}"},
+            json={
+                "report_ids": [f"sha256:{'a' * 64}", f"sha256:{'b' * 64}"],
+                "reference_report_id": f"sha256:{'c' * 64}",
+            },
+        )
+
+    assert response.status_code == 422
+    assert response.json()["error"]["code"] == "comparison_rejected"
+    assert "compatibles" in response.json()["error"]["message"]
