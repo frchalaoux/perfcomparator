@@ -24,7 +24,7 @@ $script:installLogWriter.AutoFlush = $true
 function Write-InstallLog {
     param(
         [Parameter(Mandatory = $true)][string]$Level,
-        [Parameter(Mandatory = $true)][string]$Message
+        [Parameter(Mandatory = $true)][AllowEmptyString()][string]$Message
     )
 
     $line = "{0} [{1}] {2}" -f (Get-Date -Format "yyyy-MM-ddTHH:mm:ss.fffK"), $Level, $Message
