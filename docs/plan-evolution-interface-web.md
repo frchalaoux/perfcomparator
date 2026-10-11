@@ -2,61 +2,50 @@
 
 ## Statut et portée
 
-Ce document décrit l’évolution envisagée de PerfComparator vers deux
-composants FastAPI locaux : **PerfComparator Engine (PCE)**, qui accède au
-matériel et exécute les mesures, et **PerfComparator Web (PCWEB)**, qui sert
-l’interface navigateur et appelle PCE. La CLI reste une interface prise en
-charge par le même cœur métier. Ce document décrit l’architecture cible et
-l’ordre de réalisation ; l’état des phases est précisé ci-dessous.
+Ce document est le plan de conception initial de l’application locale à deux
+composants. **Le plan a depuis été réalisé en grande partie.** L’état du
+logiciel actuel est décrit dans le [README](../README.md) et le [guide
+utilisateur](guide-utilisateur.md) ; les versions publiées et leur disponibilité
+figurent dans [Versions](versions.md).
 
-Le socle comprend désormais les deux services, leurs commandes de gestion, le
-catalogue et les informations machine dans PCWEB, le parcours de campagne avec
-contrôle préalable et progression, ainsi que la consultation des rapports.
-Les smoke tests locaux des paquets macOS et Linux sont passés. La première
-tranche de comparaison PCWEB — route PCE, sélection des rapports et affichage —
-est implémentée et vérifiée par tests ciblés et smoke navigateur. Les contrôles
-sur les références GitHub exactes resteront à faire par le workflow de
-publication.
+PCE et PCWEB sont deux paquets et deux processus séparés. PCWEB affiche
+l’inventaire, le catalogue de benchmarks, les campagnes, les rapports et leur
+comparaison. Les campagnes ont un contrôle préalable, une progression en direct
+et un rapport détaillé ; les propriétés de modèle, d’année et de référence
+produit sont modifiables. Les tests des archives isolées ont été confirmés sur
+macOS, Windows et Linux. Les installateurs officiels correspondant au code
+actuel doivent encore être construits et publiés.
 
 ## Séquence décidée avant le chantier des agents
 
-Le mode local PCE/PCWEB sera rendu utilisable et vérifié sur macOS et Linux
-avant de commencer l’implémentation des agents. L’agent ne remplace pas
-l’interface de comparaison : il permettra de recueillir à distance les mesures
-et rapports que PCWEB devra ensuite présenter.
+Le mode local PCE/PCWEB a été réalisé et vérifié sur macOS, Windows et Linux
+avec les archives d’essai isolées. Les agents restent une évolution ultérieure ;
+ils permettront de recueillir à distance les mesures et rapports que PCWEB
+pourra ensuite présenter.
 
-Ordre de réalisation convenu :
+Ordre convenu à l’époque et état actuel :
 
-1. Terminer et vérifier dans le navigateur la sélection « Tous les benchmarks »
-   (tout sélectionner, tout désélectionner et état partiel), puis conserver ses
-   tests ciblés.
-2. Fiabiliser et tester les installateurs macOS et Linux sur les paquets
-   construits. Des archives locales suivant la structure du workflow ont été
-   installées dans des environnements isolés avec les roues PCE et PCWEB
-   construites localement. Sur macOS et Ubuntu, le smoke test a validé les pages,
-   le démarrage groupé et le démarrage/arrêt séparé des serveurs. Le parcours
-   campagne → rapport fonctionne aussi depuis les checkouts macOS. Avant une
-   publication, le workflow devra encore valider les sources récupérées depuis
-   leurs références GitHub exactes.
-3. Réaliser la comparaison dans PCWEB : choisir plusieurs rapports, afficher
-   leurs machines côte à côte, désigner une référence et consulter les scores
-   comparés. PCE reste la source de vérité pour les règles et calculs de
-   comparaison.
-4. Ouvrir ensuite la phase d’étude et d’implémentation des agents, en réutilisant
-   le contrat des campagnes et les rapports déjà comparables.
+1. **Terminé :** sélection globale, sélection par groupe et sélection
+   individuelle des benchmarks sont disponibles dans PCWEB.
+2. **Terminé pour les archives d’essai :** installation isolée et essais
+   confirmés sur les trois systèmes. La construction des artefacts officiels
+   depuis les commits fusionnés reste à effectuer avant une release.
+3. **Terminé :** comparaison de plusieurs rapports dans PCWEB, choix de la
+   référence, affichage détaillé et export HTML/PDF.
+4. **À planifier :** étude et implémentation des agents, en réutilisant le
+   contrat de campagne et le format des rapports.
 
-Windows reste à arbitrer séparément. Tant que les installateurs Windows sont
-présentés comme pris en charge, leur fonctionnement doit être corrigé avant une
-publication qui promet cette plateforme ; cela ne bloque pas les validations
-locales macOS/Linux ni la préparation de l’architecture d’agents.
+Les trois systèmes sont couverts par les essais des archives isolées. Une
+publication doit encore construire et valider les installateurs officiels
+depuis les commits exacts de PCE et PCWEB.
 
 Le premier incrément installe et lance PCE et PCWEB sur la machine à mesurer.
 Les deux services n’écoutent que sur la boucle locale. Le navigateur parle à
-PCWEB, et PCWEB appelle PCE par HTTP local. Les choix recommandés pour les
-processus, dépôts et distributions sont détaillés dans les
+PCWEB, et PCWEB appelle PCE par HTTP local. Les décisions prises pour les
+processus, dépôts et distributions sont rappelées dans les
 [propositions de décisions de phase 0](propositions-decisions-phase-0.md). Les
-noms ont été confirmés et le dépôt PCWEB public a été créé ; son code sera
-publié après revue et confirmation explicite.
+noms ont été confirmés ; le code des deux dépôts est désormais fusionné dans
+leurs branches `main`.
 
 Les évolutions ultérieures pourront fonctionner :
 
@@ -81,11 +70,11 @@ confirmés.
 
 ## Proposition de découpage des dépôts
 
-Le plan sépare le backend PCE et la façade PCWEB comme SMB et SMB-WEB, sans
+Le découpage réalisé sépare le backend PCE et la façade PCWEB comme SMB et SMB-WEB, sans
 copier les domaines métier ni dupliquer le cœur. L’utilisateur a confirmé le
 nom `perfcomparator-web` pour le dépôt PCWEB et `perfcomparatorweb` pour son
-paquet installable et import Python. Le dépôt distant public est créé ; le
-push de son code nécessitera une confirmation distincte.
+paquet installable et import Python. Le dépôt distant public est créé et son
+code est fusionné dans `main`.
 
 | Dépôt | Responsabilité durable |
 | --- | --- |

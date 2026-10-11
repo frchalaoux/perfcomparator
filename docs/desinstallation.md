@@ -79,8 +79,14 @@ versions de Python gérées par `uv`.
 
 ## Données conservées
 
-Les rapports JSON restent dans `data/results` sous les répertoires où les
-campagnes ont été lancées ; le désinstallateur ne peut pas les retrouver ni les
-supprimer sans risque. Les journaux Windows restent dans
-`%LOCALAPPDATA%\PerfComparator\logs`. L'installation de `uv` et de Python reste
-disponible pour les autres outils ou projets qui pourraient en dépendre.
+Les rapports produits par les campagnes PCWEB sont conservés par défaut dans
+`~/Documents/PerfComparator` (ou dans le chemin défini par
+`PERFCOMPARATOR_WEB_REPORTS_DIR`). Les campagnes lancées directement depuis la
+CLI conservent leur comportement propre et écrivent par défaut dans
+`data/results` sous le répertoire courant. Le désinstallateur ne supprime ni
+ces rapports ni les fichiers d’état et les journaux de PCE. Leur emplacement
+peut être modifié avec `PERFCOMPARATOR_STATE_DIR`. Sous Windows, les journaux
+d’installation sont dans `%LOCALAPPDATA%\PerfComparator\logs`.
+
+L'installation de `uv` et de Python reste disponible pour les autres outils ou
+projets qui pourraient en dépendre.

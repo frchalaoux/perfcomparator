@@ -159,7 +159,7 @@ depuis le guide développeur et l’index de documentation.
 | **`pyproject.toml`** | Fichier de configuration du projet Python : nom, version, dépendances et outils de développement. |
 | **Ruff** | Outil rapide qui vérifie le style et certaines erreurs dans le code Python. |
 | **Hatchling** | Outil qui construit le paquet installable de PerfComparator à partir de sa configuration Python. |
-| **Tkinter** | Bibliothèque incluse avec Python pour créer des fenêtres et des boutons. PCE l’utilise pour son interface de bureau simple. |
+| **Tkinter** | Bibliothèque incluse avec Python pour créer des fenêtres et des boutons. Elle appartenait à l’ancienne interface de bureau `v0.5.0` ; l’interface actuelle est PCWEB dans le navigateur. |
 | **Typer** | Bibliothèque Python qui transforme des fonctions en commandes faciles à utiliser dans un terminal. PCE l’utilise pour sa CLI. |
 | **`platformdirs`** | Bibliothèque qui trouve les dossiers habituels pour les données et la configuration d’une application sur macOS, Windows et Linux. |
 | **`psutil`** | Bibliothèque qui lit des informations sur le système et les processus, comme la mémoire utilisée ou la charge du processeur. |

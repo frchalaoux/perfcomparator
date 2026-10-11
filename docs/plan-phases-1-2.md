@@ -2,6 +2,11 @@
 
 ## Objet
 
+**Document de conception historique.** Les phases 1 et 2 décrites ici ont été
+implémentées. Depuis, PCWEB a également reçu la comparaison de rapports et
+l’export détaillé. Pour connaître les fonctionnalités présentes, utiliser le
+[guide utilisateur actuel](guide-utilisateur.md).
+
 Ce document précise les deux premiers incréments du
 [plan d’évolution](plan-evolution-interface-web.md). Il transforme leurs
 livrables généraux en parcours, responsabilités et contrats vérifiables. Les

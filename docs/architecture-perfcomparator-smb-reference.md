@@ -2,6 +2,11 @@
 
 ## Objet et statut
 
+**Photographie historique réalisée avant la séparation PCE/PCWEB.** Les
+paragraphes décrivant l’ancien paquet regroupé ne correspondent plus au code
+actuel. La structure réalisée et le parcours utilisateur sont présentés dans le
+[README courant](../README.md) et le [guide utilisateur](guide-utilisateur.md).
+
 Ce document consigne l’état observé de PerfComparator et les motifs
 d’architecture actuellement utilisés dans SMB et SMB-WEB. Il sert de base à la
 révision du plan d’évolution Web ; il ne décrit pas une architecture déjà

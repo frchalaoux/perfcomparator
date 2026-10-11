@@ -1,58 +1,38 @@
 # Documentation PerfComparator
 
-Choisissez un parcours selon votre besoin. La
-[page d'accueil du projet](README.md) présente l'application et le démarrage
-rapide ; la [page des versions](docs/versions.md) contient l'historique et les
-instructions propres à chaque version.
+Choisissez un guide selon le parcours souhaité. Le logiciel actuel est formé
+de **PerfComparator Engine (PCE)** et de **PerfComparator Web (PCWEB)**. La
+version publiée `v0.5.0` décrit l’ancienne application de bureau ; ses
+documents restent consultables dans l’[archive 0.5.0](docs/archive/v0.5.0/index.md).
 
-## Installer et utiliser
+## Utiliser l’application actuelle
 
-- [Installer sur macOS, Windows ou Linux](docs/installation.md), y compris en
-  ligne de commande sur un serveur sans interface graphique.
-- [Utiliser PerfComparator](docs/guide-utilisateur.md) : interface, campagnes,
-  rapports et comparaisons.
-- [Désinstaller PerfComparator](docs/desinstallation.md) et connaître les
-  données conservées.
-- [Choisir et installer une version](docs/versions.md) : stable, préversions,
-  historique et commandes exactes.
+- [État des versions et disponibilité](docs/versions.md).
+- [Installer et désinstaller](docs/installation.md).
+- [Utiliser Machine, campagnes, rapports et comparaisons](docs/guide-utilisateur.md).
+- [Désinstaller l’application](docs/desinstallation.md).
+- [Lexique technique pour débutants](docs/lexique-technique.md).
 
-## Mesurer et comprendre les benchmarks
+## Comprendre les résultats
 
-- [Méthodologie](docs/methodologie.md) : reproductibilité, portée et limites
-  des scores.
-- [Description et références des benchmarks](docs/references-benchmarks.md) :
-  mesures, protocoles et bibliographie.
+- [Méthodologie, reproductibilité et limites](docs/methodologie.md).
+- [Description et références des benchmarks](docs/references-benchmarks.md).
+- [Format des rapports publics](docs/format-rapport-public.md).
+- [Tutoriel du catalogue communautaire](docs/tutoriel-catalogue.md).
 
-## Comparer des rapports
+## Développer et publier
 
-- [Comparaison visuelle](docs/guide-utilisateur.md#rapport-visuel-et-priorités) :
-  indices, pondérations et rapport HTML.
+- [Guide développeur](docs/guide-developpeur.md).
+- [Stratégie de construction, tests et publication des installateurs](docs/strategie-publication.md).
+- [Exporter les documents Markdown en PDF](docs/export-markdown-pdf.md).
 
-## Partager des résultats
+## Archives de conception
 
-- [Format des rapports publics](docs/format-rapport-public.md) : données
-  partagées, confidentialité, licence et validation.
-- [Tutoriel du catalogue communautaire](docs/tutoriel-catalogue.md) : mesurer,
-  exporter, contribuer, télécharger et comparer.
+Les documents ci-dessous retracent les décisions et les plans de développement.
+Ils expliquent le contexte, mais le guide utilisateur courant reste
+[`docs/guide-utilisateur.md`](docs/guide-utilisateur.md).
 
-## Développer, tester et publier
-
-- [Guide développeur](docs/guide-developpeur.md) : architecture, validations
-  locales (`ruff`, `pytest`, construction du paquet) et ajout d'un benchmark.
-- [Lexique technique](docs/lexique-technique.md) : définitions accessibles des
-  termes du code, de l’architecture Web, des campagnes et des rapports.
-- [Référence d’architecture PerfComparator, SMB et SMB-WEB](docs/architecture-perfcomparator-smb-reference.md) : état du code, motifs réutilisables, topologies à deux composants et décisions à prendre.
-- [Plan d’évolution de l’interface Web](docs/plan-evolution-interface-web.md) :
-  architecture locale et serveur, sécurité, stockage, API et phases de
-  réalisation.
-- [Détail des phases 1 et 2](docs/plan-phases-1-2.md) : parcours locaux
-  read-only, campagnes, tâches, progression, critères de sortie et décisions à
-  verrouiller avant le développement.
-- [Propositions de décisions — phase 0](docs/propositions-decisions-phase-0.md) :
-  recommandations sur les processus, dépôts, paquets, contrats HTTP, tâches,
-  sécurité locale et sujets reportés.
-- [Stratégie de publication](docs/strategie-publication.md) : construction,
-  contrôles des artefacts, essais sur les systèmes cibles et promotion en
-  Release des mêmes fichiers testés, avec schémas Mermaid.
-- [Export Markdown en PDF](docs/export-markdown-pdf.md) : mise en page des
-  documents contenant des diagrammes Mermaid.
+- [Référence de l’architecture SMB / SMB-WEB](docs/architecture-perfcomparator-smb-reference.md).
+- [Plan d’évolution PCE/PCWEB et agents](docs/plan-evolution-interface-web.md).
+- [Détail des phases 1 et 2](docs/plan-phases-1-2.md).
+- [Décisions de cadrage de la phase 0](docs/propositions-decisions-phase-0.md).
