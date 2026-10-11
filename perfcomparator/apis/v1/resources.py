@@ -5,6 +5,9 @@ from __future__ import annotations
 import hashlib
 import re
 import secrets
+import sys
+import threading
+import time
 from dataclasses import asdict
 from pathlib import Path
 
@@ -61,6 +64,11 @@ router = APIRouter(
     },
 )
 
+_WINDOWS_SYSTEM_CACHE_SECONDS = 300
+_windows_system_cache_lock = threading.Lock()
+_windows_system_cache_expires_at = 0.0
+_windows_system_cache_value: SystemEnvelope | None = None
+
 
 def _report_entries(request: Request) -> tuple[list[tuple[str, BenchmarkReport]], int]:
     repository = request.app.state.reports
@@ -99,21 +107,37 @@ def _summary(report_id: str, report: BenchmarkReport) -> ReportSummary:
 
 @router.get("/system", response_model=SystemEnvelope)
 def get_system(request: Request) -> SystemEnvelope:
-    snapshot = system_snapshot(
-        Path.home(),
-        machine_metadata=request.app.state.machine_metadata.load(),
-    )
-    safe_system = SystemResponse.model_validate(snapshot.model_dump(exclude={"python_executable"}))
-    adapters: list[GPUAdapterResponse] = []
-    warnings: list[str] = []
-    try:
-        adapters = [GPUAdapterResponse.model_validate(asdict(item)) for item in gpu_adapters()]
-    except Exception:  # noqa: BLE001 - l'inventaire système reste disponible sans WebGPU
-        warnings.append("L’inventaire des adaptateurs WebGPU est indisponible.")
-    else:
-        if not adapters:
-            warnings.append("Aucun adaptateur WebGPU compatible n’a été détecté.")
-    return SystemEnvelope(system=safe_system, gpu_adapters=adapters, warnings=warnings)
+    global _windows_system_cache_expires_at, _windows_system_cache_value
+
+    def build_response() -> SystemEnvelope:
+        snapshot = system_snapshot(
+            Path.home(),
+            machine_metadata=request.app.state.machine_metadata.load(),
+        )
+        safe_system = SystemResponse.model_validate(
+            snapshot.model_dump(exclude={"python_executable"})
+        )
+        adapters: list[GPUAdapterResponse] = []
+        warnings: list[str] = []
+        try:
+            adapters = [GPUAdapterResponse.model_validate(asdict(item)) for item in gpu_adapters()]
+        except Exception:  # noqa: BLE001 - l'inventaire système reste disponible sans WebGPU
+            warnings.append("L’inventaire des adaptateurs WebGPU est indisponible.")
+        else:
+            if not adapters:
+                warnings.append("Aucun adaptateur WebGPU compatible n’a été détecté.")
+        return SystemEnvelope(system=safe_system, gpu_adapters=adapters, warnings=warnings)
+
+    if sys.platform != "win32":
+        return build_response()
+    with _windows_system_cache_lock:
+        now = time.monotonic()
+        if _windows_system_cache_value is not None and now < _windows_system_cache_expires_at:
+            return _windows_system_cache_value
+        response = build_response()
+        _windows_system_cache_value = response
+        _windows_system_cache_expires_at = now + _WINDOWS_SYSTEM_CACHE_SECONDS
+        return response
 
 
 @router.patch("/system/machine", response_model=SystemEnvelope)
@@ -121,7 +145,12 @@ def update_machine_metadata(
     metadata: MachineMetadataOverride,
     request: Request,
 ) -> SystemEnvelope:
+    global _windows_system_cache_expires_at, _windows_system_cache_value
+
     request.app.state.machine_metadata.save(metadata)
+    with _windows_system_cache_lock:
+        _windows_system_cache_value = None
+        _windows_system_cache_expires_at = 0.0
     return get_system(request)
 
 
