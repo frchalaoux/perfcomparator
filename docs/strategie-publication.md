@@ -63,13 +63,11 @@ installer le lanceur de désinstallation et son script. Les essais Actions
 vérifient les formats et contenus de paquet ; ils ne remplacent pas le test
 manuel des installateurs dans les VM.
 
-Pour tester sans tag, chaque artefact doit identifier le SHA complet de son
-commit source, et son installateur doit installer le code de ce même commit.
-Les scripts actuels utilisent par défaut un tag GitHub ; le mode de prévisualisation
-devra donc leur fournir explicitement la source du commit testé. C'est une
-condition de validité du test, pas une option : un paquet de branche qui
-installerait silencieusement une ancienne version publiée n'est pas un artefact
-de test acceptable.
+Pour tester sans tag, chaque artefact identifie le SHA complet de son commit
+source et l’URL d’archive GitHub épinglée sur ce SHA. Le workflow transmet aussi
+à l’installateur le commit et la version exacts de PCWEB. Il vérifie que les
+fichiers construits désignent bien ces deux sources. Ainsi, un artefact de test
+installe le code construit, pas silencieusement une release antérieure.
 
 Dans GitHub, les artefacts de test se récupèrent depuis **Actions → exécution
 du commit → Artifacts**. Leur nom et un manifeste doivent indiquer le SHA source ;
@@ -82,13 +80,19 @@ doivent être accessibles publiquement aux testeurs. Dans les deux cas, le test
 précède la publication stable et porte sur les mêmes fichiers qui seront
 distribués.
 
-**État actuel :** `package-installers.yml` construit les artefacts à la demande
-sur `main` et les conserve temporairement avec un manifeste SHA-256.
-`promote-tested-release.yml` reçoit l'identifiant de cette exécution et un tag
-déjà poussé. Il vérifie la réussite du run, le commit exact du tag, la version
-du manifeste, la présence des sept fichiers et leurs empreintes, puis crée la
-Release avec ces mêmes fichiers, sans reconstruction. Un contrôle incohérent
-fait échouer la promotion avant toute création de Release.
+**État actuel :** `package-installers.yml` construit les archives macOS,
+Windows et Linux, le paquet Ubuntu/Debian et les désinstallateurs depuis `main`.
+Le déclenchement fournit le SHA complet du commit PCWEB à inclure. Les jobs
+effectuent un smoke test d’installation et de démarrage des deux services,
+contrôlent les fichiers et produisent un manifeste SHA-256 dans un artefact
+Actions conservé 14 jours.
+
+Après les essais manuels de cet artefact, `promote-tested-release.yml` reçoit
+l’identifiant de l’exécution et le tag correspondant au commit testé. Il
+vérifie la réussite du run, le commit exact du tag, la version du manifeste, la
+présence des sept fichiers et leurs empreintes, puis crée la Release avec ces
+mêmes fichiers, sans reconstruction. Un contrôle incohérent arrête la
+promotion avant la publication.
 
 ## Schémas du parcours de publication
 
@@ -251,26 +255,21 @@ de celui annoncé, arrêter la séquence et réévaluer avant toute autre écrit
 Une confirmation explicite peut couvrir une séquence annoncée en entier, mais
 n'autorise pas à en élargir le périmètre.
 
-## Tester les installateurs avant publication
+## Lancer la construction
 
-Pour tester les installateurs sans publier de tag ou de Release, intégrer
-d'abord les changements dans `main`, puis lancer **Actions → Package desktop
-installers → Run workflow** en choisissant `main`. Le workflow produit les
-archives macOS, Windows et Linux, le paquet Ubuntu / Debian `.deb` et les
-désinstallateurs autonomes sous la forme d'un artefact Actions temporaire
-(conservation de 14 jours).
+Après la fusion des changements dans `main`, ouvrir **Actions → Package
+desktop installers → Run workflow**, choisir `main`, puis fournir le SHA complet
+du commit PCWEB à intégrer. Télécharger l’artefact nommé
+`installer-test-<SHA PCE>` et son manifeste depuis la page de l’exécution.
+Tester les mêmes fichiers sur les systèmes cibles ; la construction automatisée
+ne remplace pas les essais manuels demandés pour la release.
 
-Chaque paquet contient le SHA complet de son commit source et une URL d'archive
-GitHub épinglée sur ce SHA ; son installateur utilise cette URL plutôt qu'une
-version antérieure par tag. L'artefact global inclut un manifeste indiquant le
-SHA source, la version du paquet et les empreintes SHA-256 des fichiers. Vérifier
-ce manifeste, puis tester exactement ces fichiers dans les VM et sur le Mac.
-Ne pas créer de préversion ou de Release pour ce parcours interne.
-
-La promotion d'un artefact Actions déjà testé vers une Release n'est pas encore
-automatisée. Le workflow déclenché par une Release reconstruit les paquets ; ne
-pas l'utiliser pour publier les résultats des essais tant que la promotion des
-mêmes fichiers n'est pas disponible.
+Après validation, le tag de version doit désigner exactement le commit PCE
+testé. Le workflow **Promote tested installers** reçoit l’ID de l’exécution et
+ce tag ; il publie les fichiers déjà testés et ne les reconstruit pas. Le site de
+téléchargement pointe ensuite vers les assets de la release. Les archives
+`PerfComparator-Essai` fournies aux testeurs avant cette étape sont des paquets
+de validation isolés, distincts des assets officiels de release.
 
 ## Préversions
 

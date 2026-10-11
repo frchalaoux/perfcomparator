@@ -37,7 +37,7 @@ L'interface publique est disponible ici :
 
 ## Parcours guidé recommandé
 
-À partir de `0.4.0.dev2`, toute la contribution tient dans une commande :
+Toute la contribution guidée tient dans une commande :
 
 ```bash
 perfcomparator contribute
@@ -61,29 +61,17 @@ perfcomparator contribute --dry-run
 Les sections suivantes détaillent les mêmes opérations et conservent le parcours
 manuel utile au diagnostic.
 
-## 1. Installer la version qui prend en charge le catalogue
+## 1. Prérequis : la commande PCE de contribution
 
-Le parcours guidé est disponible dans la stable actuelle, PerfComparator
-`v0.5.0`, ainsi que dans les versions ultérieures compatibles.
+Le parcours décrit ici utilise les commandes PCE `run`, `export-public`,
+`validate-public` et `contribute`. Elles sont présentes dans le code actuel,
+mais la release installable qui inclut l’architecture PCE/PCWEB n’est pas encore
+publiée. La release `v0.5.0` disponible sur GitHub est l’ancienne application ;
+elle n’est pas le moyen d’installer la version actuelle. Consultez
+[Versions](versions.md) et [Installation](installation.md) avant de commencer.
 
-Sur macOS ou Linux :
-
-```bash
-curl -LsSf https://raw.githubusercontent.com/frchalaoux/perfcomparator/v0.5.0/install.sh | sh
-```
-
-Sous Windows, dans PowerShell :
-
-```powershell
-irm https://raw.githubusercontent.com/frchalaoux/perfcomparator/v0.5.0/install.ps1 | iex
-```
-
-Contrôler l'installation :
-
-```console
-$ perfcomparator --version
-PerfComparator 0.5.0
-```
+Pour consulter le parcours d’installation et d’utilisation exact de la `v0.5.0`,
+ouvrez [son archive documentaire](archive/v0.5.0/index.md).
 
 ## 2. Mesurer la machine
 

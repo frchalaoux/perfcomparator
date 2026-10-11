@@ -2,17 +2,17 @@
 
 ## Statut
 
-Ce document rassemble les choix recommandés pour fermer le cadrage des phases
-0 à 2 avant l’implémentation. Les noms du dépôt et du paquet PCWEB sont
-confirmés par l’utilisateur. Le dépôt public `frchalaoux/perfcomparator-web`
-a été créé ; son code local reste à publier après revue et confirmation
-explicite.
+**Compte rendu historique de la phase de cadrage.** Les choix présentés ici ont
+été confirmés puis implémentés. PCE et PCWEB existent dans leurs dépôts séparés,
+et le code est fusionné dans `main`. Les fonctionnalités actuelles sont
+décrites dans le [guide utilisateur](guide-utilisateur.md) ; la disponibilité
+des installateurs est tenue à jour dans [Versions](versions.md).
 
-La recommandation cherche à respecter les deux objectifs déjà exprimés :
-reprendre les frontières de SMB et SMB-WEB, et garder un premier parcours local
-simple à installer et à lancer.
+Les tableaux ci-dessous conservent les recommandations et détails qui ont servi
+à définir la première architecture locale. Ils ne constituent plus une liste
+de décisions à valider ni un plan de tâches ouvert.
 
-## Décisions recommandées
+## Recommandations de cadrage retenues
 
 | Sujet | Décision recommandée | Motif |
 | --- | --- | --- |
@@ -33,7 +33,7 @@ simple à installer et à lancer.
 | Rapports existants | Pour le Web qui remplace Tk, conserver `~/Documents/PerfComparator` comme répertoire de rapports par défaut et offrir une configuration explicite. Ne pas déplacer les fichiers ni changer le chemin historique de la CLI. **Dossiers distincts confirmés.** | Préserve les rapports du bureau ; la CLI garde son comportement `data/results` actuel. |
 | État applicatif | Placer SQLite et les journaux d’exécution dans le répertoire d’état utilisateur défini par plateforme (`platformdirs`), séparé des rapports. | Sépare données temporaires et archives utilisateur. |
 
-## Mise en œuvre ordonnée
+## Ordre de mise en œuvre prévu à l’époque
 
 1. Définir les fabriques PCE et PCWEB, le lancement des processus, la
    configuration, l’authentification locale et la disponibilité (`/health`).
@@ -47,10 +47,9 @@ simple à installer et à lancer.
    installateurs locaux. L’installation indépendante du seul PCWEB reste
    possible pour le développement, mais n’est pas le parcours utilisateur.
 
-Les noms `perfcomparator-web` et `perfcomparatorweb` sont des choix confirmés.
-Le dépôt GitHub `perfcomparator-web` est créé en public. Le push de la branche
-locale contenant PCWEB nécessitera une confirmation explicite après annonce de
-la branche et du commit concernés.
+Les noms `perfcomparator-web` et `perfcomparatorweb` ont été confirmés. Le
+dépôt GitHub `perfcomparator-web` est public et son code est fusionné dans
+`main`.
 
 ## Décisions de nommage confirmées
 
