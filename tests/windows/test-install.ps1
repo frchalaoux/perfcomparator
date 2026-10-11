@@ -111,7 +111,7 @@ exit /b 9
     $installLog = Get-Content -LiteralPath $installLogs[0].FullName -Raw
     foreach ($expectedLogEntry in @(
         "Installer started.",
-        "Starting: uv python install 3.14.4",
+        "Starting: uv python install 3.14.4 --no-bin",
         "Starting: uv tool install --managed-python --python 3.14.4 --with-executables-from",
         "Exit code: 0 (uv)",
         "Creating shortcut",

@@ -262,7 +262,7 @@ def test_posix_installer_updates_uv_and_retries_when_python_is_unknown(tmp_path:
     old_uv = fake_bin / "uv"
     old_uv.write_text(
         '#!/bin/sh\nprintf "%s\\n" "old:$*" >> "$UV_LOG"\n'
-        'case "$*" in "python install "*) exit 2;; esac\n',
+        'case "$*" in "python install "* ) exit 2;; esac\n',
         encoding="utf-8",
     )
     old_uv.chmod(0o755)
@@ -292,6 +292,6 @@ def test_posix_installer_updates_uv_and_retries_when_python_is_unknown(tmp_path:
     subprocess.run(["sh", str(installer)], check=True, env=environment, capture_output=True)
 
     calls = log.read_text(encoding="utf-8")
-    assert "old:python install 3.14.4" in calls
-    assert "updated:python install 3.14.4" in calls
+    assert "old:python install 3.14.4 --no-bin" in calls
+    assert "updated:python install 3.14.4 --no-bin" in calls
     assert "updated:tool install" in calls

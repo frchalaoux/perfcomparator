@@ -1,5 +1,5 @@
 ﻿# Compatible avec Windows PowerShell 5.1 et PowerShell 7.
-# Python n'a pas besoin d'être déjà installé : uv gère la version reproductible.
+# Réutilise CPython 3.14.4 s'il existe ; sinon uv installe cette version.
 $ErrorActionPreference = "Stop"
 
 $logDirectory = if ($env:PERFCOMPARATOR_INSTALL_LOG_DIR) {
@@ -174,21 +174,38 @@ else {
     $uvCommand = $uvPath
 }
 
-Write-Host "Installation de CPython $pythonVersion gere par uv..."
-$result = Invoke-LoggedNativeCommand -FilePath $uvCommand -ArgumentList @("python", "install", $pythonVersion) -PassOutput
-if ($result.ExitCode -ne 0) {
-    Write-Host "La version actuelle de uv ne trouve pas CPython $pythonVersion."
-    Write-Host "Mise a niveau de uv depuis l'installateur officiel, puis nouvelle tentative..."
-    Install-CurrentUv
-    $updatedUvPath = Join-Path $HOME ".local\bin\uv.exe"
-    if (-not (Test-Path $updatedUvPath)) {
-        throw "La version mise a niveau de uv est introuvable dans $updatedUvPath."
+$pythonSearch = Invoke-LoggedNativeCommand -FilePath $uvCommand -ArgumentList @("python", "find", "--no-project", "--no-managed-python", $pythonVersion)
+$pythonExecutable = $null
+if ($pythonSearch.ExitCode -eq 0) {
+    $candidateLine = $pythonSearch.Output | Select-Object -Last 1
+    $candidate = if ($candidateLine) { $candidateLine.Trim() } else { "" }
+    if ($candidate -and (Test-Path -LiteralPath $candidate -PathType Leaf)) {
+        $pythonExecutable = $candidate
     }
-    $uvCommand = $updatedUvPath
-    $result = Invoke-LoggedNativeCommand -FilePath $uvCommand -ArgumentList @("python", "install", $pythonVersion) -PassOutput
+}
+
+if ($pythonExecutable) {
+    Write-Host "Réutilisation de CPython $pythonVersion : $pythonExecutable"
+    $pythonInstallArguments = @("--python", $pythonExecutable)
+}
+else {
+    Write-Host "Installation de CPython $pythonVersion gere par uv..."
+    $result = Invoke-LoggedNativeCommand -FilePath $uvCommand -ArgumentList @("python", "install", $pythonVersion, "--no-bin") -PassOutput
     if ($result.ExitCode -ne 0) {
-        throw "L'installation de Python $pythonVersion a encore échoué après la mise à niveau de uv (code $($result.ExitCode))."
+        Write-Host "La version actuelle de uv ne trouve pas CPython $pythonVersion."
+        Write-Host "Mise a niveau de uv depuis l'installateur officiel, puis nouvelle tentative..."
+        Install-CurrentUv
+        $updatedUvPath = Join-Path $HOME ".local\bin\uv.exe"
+        if (-not (Test-Path $updatedUvPath)) {
+            throw "La version mise a niveau de uv est introuvable dans $updatedUvPath."
+        }
+        $uvCommand = $updatedUvPath
+        $result = Invoke-LoggedNativeCommand -FilePath $uvCommand -ArgumentList @("python", "install", $pythonVersion, "--no-bin") -PassOutput
+        if ($result.ExitCode -ne 0) {
+            throw "L'installation de Python $pythonVersion a encore échoué après la mise à niveau de uv (code $($result.ExitCode))."
+        }
     }
+    $pythonInstallArguments = @("--managed-python", "--python", $pythonVersion)
 }
 
 $result = Invoke-LoggedNativeCommand -FilePath $uvCommand -ArgumentList @("tool", "dir")
@@ -233,7 +250,7 @@ if ($legacyToolInstalled) {
     }
 }
 Write-Host "Installation de PerfComparator $releaseVersion..."
-$installArguments = @("tool", "install", "--managed-python", "--python", $pythonVersion)
+$installArguments = @("tool", "install") + $pythonInstallArguments
 if ($webSourceUrl) {
     $installArguments += @("--with-executables-from", "perfcomparatorweb @ $webSourceUrl")
 }
