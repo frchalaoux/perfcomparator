@@ -12,6 +12,8 @@ from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request, s
 from fastapi.responses import JSONResponse, StreamingResponse
 
 from perfcomparator.apis.security import require_api_token
+from perfcomparator.benchmarks import GROUPS
+from perfcomparator.gpu_benchmarks import gpu_adapters
 from perfcomparator.models import CampaignRequest
 from perfcomparator.system_info import machine_readiness
 from perfcomparator.tasks import (
@@ -66,9 +68,37 @@ def _busy_response(task: CampaignTask) -> JSONResponse:
 
 
 @router.post("/readiness", response_model=CampaignReadinessResponse)
-def check_campaign_readiness(request: Request) -> CampaignReadinessResponse | JSONResponse:
+def check_campaign_readiness(
+    request: Request,
+    campaign_request: CampaignRequest | None = None,
+) -> CampaignReadinessResponse | JSONResponse:
+    selected_benchmarks = set(campaign_request.benchmark_ids) if campaign_request else set()
+
+    def check_readiness():
+        snapshot = machine_readiness()
+        if selected_benchmarks.intersection(GROUPS["gpu"]):
+            try:
+                adapters = gpu_adapters()
+            except Exception:  # noqa: BLE001 - l'échec de détection doit devenir un avertissement
+                snapshot.warnings.append(
+                    "Les tests GPU sont sélectionnés, mais les adaptateurs WebGPU n’ont pas "
+                    "pu être vérifiés ; ces tests risquent d’échouer."
+                )
+                snapshot.suitable = False
+            else:
+                compatible_adapter = any(
+                    adapter.adapter_type.casefold() != "cpu" for adapter in adapters
+                )
+                if not compatible_adapter:
+                    snapshot.warnings.append(
+                        "Les tests GPU sont sélectionnés, mais aucun adaptateur WebGPU "
+                        "compatible n’a été détecté ; ces tests risquent d’échouer."
+                    )
+                    snapshot.suitable = False
+        return snapshot
+
     try:
-        snapshot = _orchestrator(request).check_readiness(machine_readiness)
+        snapshot = _orchestrator(request).check_readiness(check_readiness)
     except EngineBusy as error:
         return _busy_response(error.task)
     return CampaignReadinessResponse.from_snapshot(snapshot)
