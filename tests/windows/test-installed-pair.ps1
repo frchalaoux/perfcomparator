@@ -7,7 +7,9 @@ $testRoot = Join-Path ([IO.Path]::GetTempPath()) "perfcomparator-pair-smoke-$([g
 $env:UV_TOOL_DIR = Join-Path $testRoot "uv-tools"
 $env:UV_TOOL_BIN_DIR = Join-Path $testRoot "uv-bin"
 $env:PERFCOMPARATOR_STATE_DIR = Join-Path $testRoot "state"
+$env:PERFCOMPARATOR_INSTALL_LOG_DIR = Join-Path $testRoot "logs"
 New-Item -ItemType Directory -Path $env:PERFCOMPARATOR_STATE_DIR -Force | Out-Null
+New-Item -ItemType Directory -Path $env:PERFCOMPARATOR_INSTALL_LOG_DIR -Force | Out-Null
 
 function Invoke-Tool {
     param(
@@ -35,8 +37,18 @@ function Invoke-Tool {
 }
 
 $installerPath = Join-Path $InstallerDirectory "install.ps1"
-& $installerPath
-if ($LASTEXITCODE -ne 0) { throw "The packaged installer failed: $LASTEXITCODE" }
+try {
+    & $installerPath
+    if ($LASTEXITCODE -ne 0) { throw "The packaged installer failed: $LASTEXITCODE" }
+}
+catch {
+    Write-Host "The packaged installer failed. Installation log follows:"
+    Get-ChildItem -LiteralPath $env:PERFCOMPARATOR_INSTALL_LOG_DIR -Filter "install-*.log" -File |
+        Sort-Object LastWriteTime -Descending |
+        Select-Object -First 1 |
+        ForEach-Object { Get-Content -LiteralPath $_.FullName }
+    throw
+}
 $pce = Join-Path $env:UV_TOOL_BIN_DIR "perfcomparator.exe"
 $pcweb = Join-Path $env:UV_TOOL_BIN_DIR "perfcomparatorweb.exe"
 
