@@ -2,25 +2,19 @@
 
 ## Disponibilité actuelle
 
-Le candidat à la release stable utilise deux paquets : PCE `0.5.1` et PCWEB
-`0.1.1.dev0`. Ils sont intégrés dans `main`, mais les installateurs de
-`v0.5.1` n’ont pas encore été publiés dans une release GitHub.
-
-La dernière release installable est `v0.5.0`. Elle correspond à l’ancienne
-application de bureau et ne fournit pas l’architecture actuelle PCE/PCWEB.
-Pour installer cette ancienne release, suivez sa
-[documentation archivée](archive/v0.5.0/docs/installation.md). Les versions
-publiées sont listées dans [Versions](versions.md) et sur la page des
-[releases GitHub](https://github.com/frchalaoux/perfcomparator/releases).
-
-Les essais manuels d’archives isolées ont été confirmés sur macOS, Windows et
-Linux. Les installateurs officiels de release doivent encore être construits
-depuis le commit fusionné et publiés. Une fois publiés, ils seront proposés sur
-la [page officielle de téléchargement](https://frchalaoux.github.io/perfcomparator/)
-et dans une release GitHub. Les noms des paquets sont
+La release stable [`v0.5.1`](https://github.com/frchalaoux/perfcomparator/releases/tag/v0.5.1)
+installe deux paquets : PCE `0.5.1` et PCWEB `0.1.1.dev0`. Ses installateurs
+sont disponibles sur la [page de téléchargement](https://frchalaoux.github.io/perfcomparator/)
+et dans la release GitHub. Les noms des paquets sont
 `PerfComparator-macOS.zip`,
 `PerfComparator-Windows-x64.zip`, `PerfComparator-Linux-x86_64.tar.gz` et,
 pour Ubuntu/Debian, `PerfComparator-Ubuntu-Debian-amd64.deb`.
+
+La `v0.5.0` correspond à l’ancienne application de bureau et ne fournit pas
+l’architecture PCE/PCWEB. Pour l’installer, suivez sa
+[documentation archivée](archive/v0.5.0/docs/installation.md). Les versions
+publiées sont listées dans [Versions](versions.md) et sur la page des
+[releases GitHub](https://github.com/frchalaoux/perfcomparator/releases).
 
 ## Ce que l’installation actuelle prépare
 
