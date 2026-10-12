@@ -119,6 +119,40 @@ def test_posix_installer_defaults_to_its_own_tag(tmp_path: Path) -> None:
     assert "refs/tags/v0.1.0.tar.gz" not in calls
 
 
+def test_posix_installer_uses_version_bundled_with_the_archive(tmp_path: Path) -> None:
+    installer = tmp_path / "install.sh"
+    installer.write_text((ROOT / "install.sh").read_text(encoding="utf-8"), encoding="utf-8")
+    (tmp_path / "release-version.txt").write_text("v0.5.1\n", encoding="utf-8")
+    (tmp_path / "source-url.txt").write_text(
+        "https://example.invalid/perfcomparator.tar.gz\n", encoding="utf-8"
+    )
+    fake_bin = tmp_path / "bin"
+    fake_bin.mkdir()
+    uv = fake_bin / "uv"
+    uv.write_text('#!/bin/sh\nprintf "%s\\n" "$*" >> "$UV_LOG"\n', encoding="utf-8")
+    uv.chmod(0o755)
+    log = tmp_path / "uv.log"
+    environment = os.environ | {
+        "HOME": str(tmp_path),
+        "PATH": f"{fake_bin}{os.pathsep}{os.environ['PATH']}",
+        "UV_LOG": str(log),
+    }
+    for variable in (
+        "BENCHMARK_MAC_SOURCE",
+        "BENCHMARK_MAC_VERSION",
+        "PERFCOMPARATOR_SOURCE",
+        "PERFCOMPARATOR_VERSION",
+    ):
+        environment.pop(variable, None)
+
+    result = subprocess.run(
+        ["sh", str(installer)], check=True, env=environment, capture_output=True, text=True
+    )
+
+    assert "Installation de PerfComparator v0.5.1..." in result.stdout
+    assert "example.invalid/perfcomparator.tar.gz" in log.read_text(encoding="utf-8")
+
+
 def test_posix_installer_honors_an_explicit_source(tmp_path: Path) -> None:
     installer = tmp_path / "install.sh"
     installer.write_text((ROOT / "install.sh").read_text(encoding="utf-8"), encoding="utf-8")

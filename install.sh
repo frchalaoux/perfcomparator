@@ -3,12 +3,17 @@
 # Réutilise CPython 3.14.4 s'il existe ; sinon uv installe cette version.
 set -eu
 
-release_version="${PERFCOMPARATOR_VERSION:-${BENCHMARK_MAC_VERSION:-v0.5.0}}"
 python_version="3.14.4"
 script_dir=""
 if [ -f "$0" ]; then
     script_dir=$(CDPATH= cd -- "$(dirname -- "$0")" 2>/dev/null && pwd || true)
 fi
+
+bundled_release_version=""
+if [ -n "$script_dir" ] && [ -f "$script_dir/release-version.txt" ]; then
+    IFS= read -r bundled_release_version < "$script_dir/release-version.txt"
+fi
+release_version="${PERFCOMPARATOR_VERSION:-${BENCHMARK_MAC_VERSION:-${bundled_release_version:-v0.5.0}}}"
 
 bundled_source_url=""
 if [ -n "$script_dir" ] && [ -f "$script_dir/source-url.txt" ]; then

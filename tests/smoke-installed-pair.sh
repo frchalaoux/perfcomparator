@@ -8,7 +8,13 @@ export UV_TOOL_BIN_DIR="$test_root/uv-bin"
 export PERFCOMPARATOR_STATE_DIR="$test_root/state"
 mkdir -p "$PERFCOMPARATOR_STATE_DIR"
 
-sh "$installer_dir/install.sh"
+if [ -f "$installer_dir/install.command" ]; then
+    sh "$installer_dir/install.command"
+elif [ -f "$installer_dir/install-linux.sh" ]; then
+    sh "$installer_dir/install-linux.sh"
+else
+    sh "$installer_dir/install.sh"
+fi
 perfcomparator="$UV_TOOL_BIN_DIR/perfcomparator"
 perfcomparatorweb="$UV_TOOL_BIN_DIR/perfcomparatorweb"
 
