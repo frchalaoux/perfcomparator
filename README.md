@@ -11,15 +11,17 @@ locale et ne nécessitent pas de compte ni de serveur distant.
 
 ## État des versions
 
-- Dernière version stable publiée : [`v0.5.0`](https://github.com/frchalaoux/perfcomparator/releases/tag/v0.5.0). Elle correspond à l’ancienne application de bureau.
-- Dernière préversion publiée : [`v0.5.0.dev0`](https://github.com/frchalaoux/perfcomparator/releases/tag/v0.5.0.dev0), également antérieure à l’architecture PCE/PCWEB.
-- Code candidat sur `main` : PCE `0.5.1` avec PCWEB `0.1.1.dev0`. La release `v0.5.1` n’est pas encore publiée.
+- Dernière version stable publiée :
+  [`v0.5.1`](https://github.com/frchalaoux/perfcomparator/releases/tag/v0.5.1),
+  avec PCE `0.5.1` et PCWEB `0.1.1.dev0`.
+- Dernière préversion publiée :
+  [`v0.5.0.dev0`](https://github.com/frchalaoux/perfcomparator/releases/tag/v0.5.0.dev0),
+  antérieure à l’architecture PCE/PCWEB.
 - [Documentation archivée de `v0.5.0`](docs/archive/v0.5.0/index.md) · [Toutes les versions publiées](https://github.com/frchalaoux/perfcomparator/tags).
 
 La [page de téléchargement](https://frchalaoux.github.io/perfcomparator/) propose
-les installateurs des releases publiées. Tant que la version actuelle n’a pas
-été publiée, ces fichiers peuvent installer l’ancienne version `v0.5.0` ; suivez
-sa documentation archivée pour cette release.
+les installateurs de la dernière release stable. Pour l’ancienne application
+de bureau `v0.5.0`, consultez sa documentation archivée.
 
 ## Démarrer l’application actuelle
 
