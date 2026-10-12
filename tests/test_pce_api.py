@@ -126,7 +126,11 @@ def test_read_only_routes_require_the_api_token(tmp_path) -> None:
 def test_system_route_filters_private_python_path_and_returns_gpu_adapters(
     monkeypatch, tmp_path
 ) -> None:
-    monkeypatch.setattr(resources, "system_snapshot", lambda _path: _sample_system())
+    monkeypatch.setattr(
+        resources,
+        "system_snapshot",
+        lambda _path, **_kwargs: _sample_system(),
+    )
     monkeypatch.setattr(
         resources,
         "gpu_adapters",
@@ -150,7 +154,11 @@ def test_system_route_filters_private_python_path_and_returns_gpu_adapters(
 def test_system_route_keeps_inventory_available_when_gpu_detection_fails(
     monkeypatch, tmp_path
 ) -> None:
-    monkeypatch.setattr(resources, "system_snapshot", lambda _path: _sample_system())
+    monkeypatch.setattr(
+        resources,
+        "system_snapshot",
+        lambda _path, **_kwargs: _sample_system(),
+    )
 
     def fail_gpu_detection():
         raise RuntimeError("driver detail must not escape")

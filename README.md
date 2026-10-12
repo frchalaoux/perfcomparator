@@ -13,7 +13,7 @@ locale et ne nécessitent pas de compte ni de serveur distant.
 
 - Dernière version stable publiée : [`v0.5.0`](https://github.com/frchalaoux/perfcomparator/releases/tag/v0.5.0). Elle correspond à l’ancienne application de bureau.
 - Dernière préversion publiée : [`v0.5.0.dev0`](https://github.com/frchalaoux/perfcomparator/releases/tag/v0.5.0.dev0), également antérieure à l’architecture PCE/PCWEB.
-- Code actuel sur `main` : PCE `0.5.1.dev0` avec PCWEB `0.1.1.dev0`. Cette version n’a pas encore de release installable.
+- Code candidat sur `main` : PCE `0.5.1` avec PCWEB `0.1.1.dev0`. La release `v0.5.1` n’est pas encore publiée.
 - [Documentation archivée de `v0.5.0`](docs/archive/v0.5.0/index.md) · [Toutes les versions publiées](https://github.com/frchalaoux/perfcomparator/tags).
 
 La [page de téléchargement](https://frchalaoux.github.io/perfcomparator/) propose

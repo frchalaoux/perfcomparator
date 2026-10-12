@@ -10,7 +10,7 @@ La branche `main` contient actuellement :
 
 | Composant | Paquet Python | Version source |
 | --- | --- | --- |
-| PerfComparator Engine (PCE) | `perfcomparator` | `0.5.1.dev0` |
+| PerfComparator Engine (PCE) | `perfcomparator` | `0.5.1` |
 | PerfComparator Web (PCWEB) | `perfcomparatorweb` | `0.1.1.dev0` |
 
 Cette architecture locale à deux services n’a pas encore de release avec ses

@@ -2,9 +2,9 @@
 
 ## Disponibilité actuelle
 
-La version actuelle du logiciel utilise deux paquets : PCE `0.5.1.dev0` et
-PCWEB `0.1.1.dev0`. Ils sont intégrés dans `main`, mais les installateurs
-correspondants n’ont pas encore été publiés dans une release GitHub.
+Le candidat à la release stable utilise deux paquets : PCE `0.5.1` et PCWEB
+`0.1.1.dev0`. Ils sont intégrés dans `main`, mais les installateurs de
+`v0.5.1` n’ont pas encore été publiés dans une release GitHub.
 
 La dernière release installable est `v0.5.0`. Elle correspond à l’ancienne
 application de bureau et ne fournit pas l’architecture actuelle PCE/PCWEB.

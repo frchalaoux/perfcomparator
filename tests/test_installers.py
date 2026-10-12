@@ -7,7 +7,6 @@ from perfcomparator import __version__
 
 ROOT = Path(__file__).parents[1]
 PUBLISHED_VERSION = "0.5.0"
-EXPECTED_TAG = f"v{PUBLISHED_VERSION}"
 CANDIDATE_TAG = "v0.5.0"
 
 
@@ -66,18 +65,15 @@ def test_versions_are_consistent_across_package_and_installers() -> None:
     assert '"-File", $installerPath' in windows_installer
     assert "irm https://astral.sh/uv/install.ps1 | iex" not in windows_installer
     assert "Graphical shortcut not created; CLI remains available." in windows_installer
-    expected_posix_url = (
-        f"https://raw.githubusercontent.com/frchalaoux/perfcomparator/{EXPECTED_TAG}/install.sh"
+    stable_release_url = (
+        f"https://github.com/frchalaoux/perfcomparator/releases/tag/v{PUBLISHED_VERSION}"
     )
-    expected_windows_url = (
-        f"https://raw.githubusercontent.com/frchalaoux/perfcomparator/{EXPECTED_TAG}/install.ps1"
+    development_release_url = (
+        "https://github.com/frchalaoux/perfcomparator/releases/tag/v0.5.0.dev0"
     )
     for document in (readme, versions):
-        assert PUBLISHED_VERSION in document
-    assert expected_posix_url in versions
-    assert expected_windows_url in versions
-    assert "/v0.3.0.dev0/install.sh" in versions
-    assert "/v0.3.0.dev0/install.ps1" in versions
+        assert stable_release_url in document
+        assert development_release_url in document
 
 
 def test_release_archives_include_platform_uninstallers() -> None:
