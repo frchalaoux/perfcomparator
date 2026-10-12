@@ -33,7 +33,8 @@ def test_service_aggregates_repetitions_with_the_median(tmp_path, monkeypatch) -
     definition = BenchmarkDefinition("test.fake", "test", "Test", "Test", fake_runner)
     monkeypatch.setitem(benchmark_module.CATALOG, "test.fake", definition)
     monkeypatch.setattr(
-        "perfcomparator.executor.system_snapshot", lambda _path: sample_report().system
+        "perfcomparator.executor.system_snapshot",
+        lambda _path, **_kwargs: sample_report().system,
     )
 
     repository = JsonReportRepository(tmp_path / "results")
