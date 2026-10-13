@@ -11,6 +11,13 @@ release stable actuelle. Les tags sont la référence immuable du code publié :
 | PerfComparator Engine (PCE) | `perfcomparator` | `0.5.1` |
 | PerfComparator Web (PCWEB) | `perfcomparatorweb` | `0.1.1.dev0` |
 
+## Prochaine version en préparation
+
+La version candidate `v0.5.2` prépare PCE `0.5.2` avec PCWEB `0.1.1`, fixé au
+commit `baf0c416d34a05779c0bc456faa1de5649fe6f1d`. Elle n’est pas encore publiée
+ni installable. Les liens de release seront ajoutés quand son code source sera
+accessible depuis GitHub.
+
 ## Releases publiées
 
 | Version | État | Documentation |

@@ -58,7 +58,7 @@ def test_versions_are_consistent_across_package_and_installers() -> None:
     assert "perfcomparatorweb @ $web_source_url" in posix_installer
     assert '"perfcomparatorweb @ $webSourceUrl"' in windows_installer
     pcweb_source = (
-        "perfcomparator-web/archive/6bb98c77a8c54b2471bb623e848bfaaf704733b7.tar.gz"
+        "perfcomparator-web/archive/baf0c416d34a05779c0bc456faa1de5649fe6f1d.tar.gz"
     )
     assert pcweb_source in posix_installer
     assert pcweb_source in windows_installer
@@ -122,7 +122,7 @@ def test_posix_installer_defaults_to_its_own_tag(tmp_path: Path) -> None:
 def test_posix_installer_uses_version_bundled_with_the_archive(tmp_path: Path) -> None:
     installer = tmp_path / "install.sh"
     installer.write_text((ROOT / "install.sh").read_text(encoding="utf-8"), encoding="utf-8")
-    (tmp_path / "release-version.txt").write_text("v0.5.1\n", encoding="utf-8")
+    (tmp_path / "release-version.txt").write_text("v0.5.2\n", encoding="utf-8")
     (tmp_path / "source-url.txt").write_text(
         "https://example.invalid/perfcomparator.tar.gz\n", encoding="utf-8"
     )
@@ -149,7 +149,7 @@ def test_posix_installer_uses_version_bundled_with_the_archive(tmp_path: Path) -
         ["sh", str(installer)], check=True, env=environment, capture_output=True, text=True
     )
 
-    assert "Installation de PerfComparator v0.5.1..." in result.stdout
+    assert "Installation de PerfComparator v0.5.2..." in result.stdout
     assert "example.invalid/perfcomparator.tar.gz" in log.read_text(encoding="utf-8")
 
 

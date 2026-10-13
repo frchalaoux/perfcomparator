@@ -104,7 +104,7 @@ elseif ($PSScriptRoot -and (Test-Path -LiteralPath (Join-Path $PSScriptRoot "web
     (Get-Content -LiteralPath (Join-Path $PSScriptRoot "web-source-url.txt") -Raw).Trim()
 }
 else {
-    "https://github.com/frchalaoux/perfcomparator-web/archive/6bb98c77a8c54b2471bb623e848bfaaf704733b7.tar.gz"
+    "https://github.com/frchalaoux/perfcomparator-web/archive/baf0c416d34a05779c0bc456faa1de5649fe6f1d.tar.gz"
 }
 $webSourceVersion = if ($env:PERFCOMPARATOR_WEB_VERSION) {
     $env:PERFCOMPARATOR_WEB_VERSION
@@ -113,7 +113,7 @@ elseif ($PSScriptRoot -and (Test-Path -LiteralPath (Join-Path $PSScriptRoot "web
     (Get-Content -LiteralPath (Join-Path $PSScriptRoot "web-source-version.txt") -Raw).Trim()
 }
 else {
-    "0.1.0"
+    "0.1.1"
 }
 
 if ($PSScriptRoot -and (Test-Path (Join-Path $PSScriptRoot "pyproject.toml"))) {
