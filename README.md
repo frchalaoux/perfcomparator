@@ -12,10 +12,8 @@ locale et ne nécessitent pas de compte ni de serveur distant.
 ## État des versions
 
 - Dernière version stable publiée :
-  [`v0.5.1`](https://github.com/frchalaoux/perfcomparator/releases/tag/v0.5.1),
-  avec PCE `0.5.1` et PCWEB `0.1.1.dev0`.
-- Prochaine version stable en préparation : PCE `0.5.2` avec PCWEB
-  `0.1.1`. Elle n’est pas encore publiée ni installable.
+  [`v0.5.2`](https://github.com/frchalaoux/perfcomparator/releases/tag/v0.5.2),
+  avec PCE `0.5.2` et PCWEB `0.1.1`.
 - Dernière préversion publiée :
   [`v0.5.0.dev0`](https://github.com/frchalaoux/perfcomparator/releases/tag/v0.5.0.dev0),
   antérieure à l’architecture PCE/PCWEB.
