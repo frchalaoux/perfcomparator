@@ -2,8 +2,8 @@
 
 ## Disponibilité actuelle
 
-La release stable [`v0.5.1`](https://github.com/frchalaoux/perfcomparator/releases/tag/v0.5.1)
-installe deux paquets : PCE `0.5.1` et PCWEB `0.1.1.dev0`. Ses installateurs
+La release stable [`v0.5.2`](https://github.com/frchalaoux/perfcomparator/releases/tag/v0.5.2)
+installe deux paquets : PCE `0.5.2` et PCWEB `0.1.1`. Ses installateurs
 sont disponibles sur la [page de téléchargement](https://frchalaoux.github.io/perfcomparator/)
 et dans la release GitHub. Les noms des paquets sont
 `PerfComparator-macOS.zip`,
