@@ -5,7 +5,7 @@ on:
     inputs:
       pcweb_commit:
         description: Exact 40-character PCWEB commit to bundle with PCE
-        default: 6bb98c77a8c54b2471bb623e848bfaaf704733b7
+        default: baf0c416d34a05779c0bc456faa1de5649fe6f1d
         required: true
         type: string
 

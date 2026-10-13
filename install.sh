@@ -24,13 +24,13 @@ bundled_web_source_url=""
 if [ -n "$script_dir" ] && [ -f "$script_dir/web-source-url.txt" ]; then
     IFS= read -r bundled_web_source_url < "$script_dir/web-source-url.txt"
 fi
-default_web_source_url="https://github.com/frchalaoux/perfcomparator-web/archive/6bb98c77a8c54b2471bb623e848bfaaf704733b7.tar.gz"
+default_web_source_url="https://github.com/frchalaoux/perfcomparator-web/archive/baf0c416d34a05779c0bc456faa1de5649fe6f1d.tar.gz"
 web_source_url="${PERFCOMPARATOR_WEB_SOURCE:-${bundled_web_source_url:-$default_web_source_url}}"
 bundled_web_source_version=""
 if [ -n "$script_dir" ] && [ -f "$script_dir/web-source-version.txt" ]; then
     IFS= read -r bundled_web_source_version < "$script_dir/web-source-version.txt"
 fi
-web_source_version="${PERFCOMPARATOR_WEB_VERSION:-${bundled_web_source_version:-0.1.0}}"
+web_source_version="${PERFCOMPARATOR_WEB_VERSION:-${bundled_web_source_version:-0.1.1}}"
 
 if [ -n "$script_dir" ] && [ -f "$script_dir/pyproject.toml" ]; then
     source_url="$script_dir"

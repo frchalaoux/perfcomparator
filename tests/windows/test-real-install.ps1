@@ -46,7 +46,14 @@ $versionExitCode = $LASTEXITCODE
 if ($versionExitCode -ne 0) {
     throw "perfcomparator --version failed (code $versionExitCode): $($versionOutput -join ' ')"
 }
-if (($versionOutput -join "`n") -notmatch "(?m)^PerfComparator 0\.5\.1\.dev0$") {
+$projectRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
+$projectMetadata = Get-Content -LiteralPath (Join-Path $projectRoot "pyproject.toml") -Raw
+$versionMatch = [regex]::Match($projectMetadata, '(?m)^version\s*=\s*"([^"]+)"\s*$')
+if (-not $versionMatch.Success) {
+    throw "Could not read the project version from pyproject.toml."
+}
+$expectedVersionOutput = "PerfComparator $($versionMatch.Groups[1].Value)"
+if (($versionOutput -join "`n") -notmatch ("(?m)^" + [regex]::Escape($expectedVersionOutput) + "$")) {
     throw "Unexpected installed version: $($versionOutput -join ' ')"
 }
 
